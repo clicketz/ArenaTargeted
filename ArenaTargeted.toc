@@ -1,0 +1,8 @@
+## Interface: 120000
+## Title: ArenaTargeted
+## Notes: Shows class-colored indicators next to party frames when targeted by enemies in Arena.
+## Author: clicket
+## Version: 1.0
+## IconTexture: Interface\Icons\ability_hunter_snipershot
+
+core.lua

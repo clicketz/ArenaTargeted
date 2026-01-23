@@ -31,6 +31,7 @@ function ns.CreateContainer(parent)
 
     container.arenaEnemyIndicators = {}
 
+    -- TODO: Add indicator options
     for i = 1, 3 do
         local indicator = CreateFrame("Frame", nil, container)
         indicator:SetSize(12, 12)
@@ -40,13 +41,12 @@ function ns.CreateContainer(parent)
         border:SetAllPoints()
         border:SetColorTexture(0, 0, 0, 1)
 
-        -- Inner Class Color (Inset 1px)
+        -- "Inner" texture for coloring
         local inner = indicator:CreateTexture(nil, "ARTWORK")
         inner:SetPoint("TOPLEFT", indicator, "TOPLEFT", 1, -1)
         inner:SetPoint("BOTTOMRIGHT", indicator, "BOTTOMRIGHT", -1, 1)
         indicator.inner = inner
 
-        -- Layout: Left to Right
         if i == 1 then
             indicator:SetPoint("LEFT", container, "LEFT", 0, 0)
         else
@@ -101,13 +101,13 @@ function ns.SetupCombatEvents()
                 local indicator = container.arenaEnemyIndicators[arenaIndex]
 
                 if parent.unit then
-                    -- Patch 12.0: UnitIsUnit returns a Secret Value
+                    -- UnitIsUnit returns a secret value
                     local isMatch = UnitIsUnit(unitTarget, parent.unit)
 
                     indicator.inner:SetColorTexture(r, g, b, 1)
                     indicator:Show()
 
-                    -- Use SetAlphaFromBoolean to safely handle the Secret Value
+                    -- Use SetAlphaFromBoolean to safely handle secret value
                     indicator:SetAlphaFromBoolean(isMatch)
                 else
                     indicator:Hide()

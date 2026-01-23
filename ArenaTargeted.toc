@@ -3,6 +3,7 @@
 ## Notes: Shows class-colored indicators next to party frames when targeted by enemies in Arena.
 ## Author: clicket
 ## Version: @project-version@
+## X-Curse-Project-ID: 1440772
 ## IconTexture: Interface\Icons\ability_hunter_snipershot
 
 core.lua

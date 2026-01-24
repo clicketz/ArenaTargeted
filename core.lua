@@ -280,7 +280,6 @@ function ns.SetupSystemEvents()
     systemListener:SetScript("OnEvent", function(self, event)
         if event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
             ns.UpdatePixelScale()
-            ns.UpdateAll() -- Re-snap everything to new pixel grid
         else
             ns.Init()
         end

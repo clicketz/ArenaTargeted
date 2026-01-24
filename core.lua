@@ -1,5 +1,6 @@
 local addonName, ns = ...
 
+-- Upvalues
 local UnitExists = UnitExists
 local string_match = string.match
 local tonumber = tonumber
@@ -9,6 +10,13 @@ local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
 local Settings = Settings
 local PixelUtil = PixelUtil
+
+-- Pre-fetch these so we don't query C_ClassColor inside the layout loop
+local TEST_COLORS = {
+    [1] = C_ClassColor.GetClassColor("MAGE"),
+    [2] = C_ClassColor.GetClassColor("ROGUE"),
+    [3] = C_ClassColor.GetClassColor("DRUID")
+}
 
 -- Default configuration
 ns.defaults = {
@@ -26,6 +34,13 @@ ns.defaults = {
 ns.containers = {}
 ns.testFrame = nil
 ns.categoryID = nil
+ns.pixelScale = 1
+
+-- Updates the cached scale only when necessary (Init or UI Scale change)
+function ns.UpdatePixelScale()
+    ns.pixelScale = PixelUtil.GetPixelToUIUnitFactor()
+    -- If we had a live layout update requirement on scale change, we could call UpdateAll() here
+end
 
 -- Returns unit class color as RGBA
 local function GetUnitColor(unit)
@@ -45,15 +60,13 @@ end
 function ns.UpdateContainerLayout(container)
     local db = ns.db or ns.defaults
 
-    -- Get exact size of 1 physical pixel
-    local px = PixelUtil.GetPixelToUIUnitFactor()
+    local px = ns.pixelScale
 
-    -- Position container handle (Snapped to pixel grid)
+    -- Position container handle
     container:ClearAllPoints()
     local anchor = db.anchor or ns.defaults.anchor
     local relPoint = db.relativePoint or ns.defaults.relativePoint
 
-    -- PixelUtil.SetPoint automatically snaps the offset to the nearest physical pixel
     PixelUtil.SetPoint(container, anchor, container:GetParent(), relPoint, db.x, db.y)
 
     -- Update indicators
@@ -62,10 +75,9 @@ function ns.UpdateContainerLayout(container)
     local spacing = db.spacing or 2
 
     for i, indicator in ipairs(container.arenaEnemyIndicators) do
-        -- PixelUtil.SetSize snaps the width/height to prevent blurring
         PixelUtil.SetSize(indicator, size, size)
 
-        -- We manually use 'px' here to ensure the border is exactly 1 physical pixel wide
+        -- Update 1px border
         indicator.inner:ClearAllPoints()
         indicator.inner:SetPoint("TOPLEFT", indicator, "TOPLEFT", px, -px)
         indicator.inner:SetPoint("BOTTOMRIGHT", indicator, "BOTTOMRIGHT", -px, px)
@@ -84,7 +96,6 @@ function ns.UpdateContainerLayout(container)
         indicator:ClearAllPoints()
 
         if i == 1 then
-            -- Mirror anchor to ensure precise corner alignment
             PixelUtil.SetPoint(indicator, anchor, container, anchor, 0, 0)
         else
             local prev = container.arenaEnemyIndicators[i - 1]
@@ -99,19 +110,11 @@ function ns.UpdateContainerLayout(container)
             end
         end
 
-        -- Apply dummy data if attached to test frame
+        -- Test Frame Logic
         if container:GetParent() == ns.testFrame then
             indicator:Show()
             indicator:SetAlpha(1)
-            local c
-            if i == 1 then
-                c = C_ClassColor.GetClassColor("MAGE")
-            elseif i == 2 then
-                c = C_ClassColor.GetClassColor("ROGUE")
-            elseif i == 3 then
-                c = C_ClassColor.GetClassColor("DRUID")
-            end
-
+            local c = TEST_COLORS[i]
             if c then
                 indicator.inner:SetColorTexture(c.r, c.g, c.b, 1)
             else
@@ -123,6 +126,9 @@ end
 
 -- Force update all containers
 function ns.UpdateAll()
+    -- Ensure scale is fresh before a mass update (safety check)
+    if not ns.pixelScale then ns.UpdatePixelScale() end
+
     for _, container in ipairs(ns.containers) do
         ns.UpdateContainerLayout(container)
     end
@@ -131,7 +137,6 @@ end
 -- Initialize a new container frame
 function ns.CreateContainer(parent)
     local container = CreateFrame("Frame", nil, parent)
-    -- Use PixelUtil to snap the container size (probably unnecessary)
     PixelUtil.SetSize(container, 1, 1)
 
     container.arenaEnemyIndicators = {}
@@ -140,12 +145,10 @@ function ns.CreateContainer(parent)
         local indicator = CreateFrame("Frame", nil, container)
         indicator:SetFrameLevel(parent:GetFrameLevel() + 10)
 
-        -- Outer Border (Black)
         local border = indicator:CreateTexture(nil, "BACKGROUND")
         border:SetAllPoints()
         border:SetColorTexture(0, 0, 0, 1)
 
-        -- Inner Color (Inset handled in UpdateLayout)
         local inner = indicator:CreateTexture(nil, "ARTWORK")
         indicator.inner = inner
 
@@ -183,14 +186,12 @@ function ns.CreateTestFrame()
     f:SetScale(scale)
     f:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 
-    -- Black border
     local border = f:CreateTexture(nil, "BACKGROUND")
     border:SetAllPoints()
     border:SetColorTexture(0, 0, 0, 1)
 
-    -- Class colored background
     local bg = f:CreateTexture(nil, "BORDER")
-    local px = PixelUtil.GetPixelToUIUnitFactor()
+    local px = ns.pixelScale or PixelUtil.GetPixelToUIUnitFactor()
     bg:SetPoint("TOPLEFT", f, "TOPLEFT", px, -px)
     bg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -px, px)
 
@@ -257,6 +258,7 @@ end
 -- Events & Initialization
 function ns.Init()
     ns.CreateTestFrame()
+    ns.UpdatePixelScale()
 
     for i = 1, 5 do
         local frameName = "CompactPartyFrameMember" .. i
@@ -272,9 +274,16 @@ function ns.SetupSystemEvents()
     local systemListener = CreateFrame("FRAME")
     systemListener:RegisterEvent("PLAYER_ENTERING_WORLD")
     systemListener:RegisterEvent("GROUP_ROSTER_UPDATE")
+    systemListener:RegisterEvent("UI_SCALE_CHANGED")
+    systemListener:RegisterEvent("DISPLAY_SIZE_CHANGED")
 
-    systemListener:SetScript("OnEvent", function()
-        ns.Init()
+    systemListener:SetScript("OnEvent", function(self, event)
+        if event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
+            ns.UpdatePixelScale()
+            ns.UpdateAll() -- Re-snap everything to new pixel grid
+        else
+            ns.Init()
+        end
     end)
 end
 
@@ -289,25 +298,21 @@ function ns.SetupCombatEvents()
         local unitTarget = unit .. "target"
         local r, g, b = GetUnitColor(unit)
 
-        if r then
-            for _, container in ipairs(ns.containers) do
-                local parent = container:GetParent()
-                if parent ~= ns.testFrame then
-                    local indicator = container.arenaEnemyIndicators[arenaIndex]
-                    if parent.unit then
-                        local isMatch = UnitIsUnit(unitTarget, parent.unit)
-                        indicator.inner:SetColorTexture(r, g, b, 1)
-                        indicator:Show()
-                        indicator:SetAlphaFromBoolean(isMatch)
-                    else
-                        indicator:Hide()
-                    end
-                end
-            end
-        else
-            for _, container in ipairs(ns.containers) do
-                if container:GetParent() ~= ns.testFrame then
-                    local indicator = container.arenaEnemyIndicators[arenaIndex]
+        -- Iterate containers once, handling both Show and Hide logic inside
+        for _, container in ipairs(ns.containers) do
+            local parent = container:GetParent()
+
+            -- Test Frame handles its own coloring, so we skip it
+            if parent ~= ns.testFrame then
+                local indicator = container.arenaEnemyIndicators[arenaIndex]
+
+                -- Valid enemy color AND Valid parent unit
+                if r and parent.unit then
+                    local isMatch = UnitIsUnit(unitTarget, parent.unit)
+                    indicator.inner:SetColorTexture(r, g, b, 1)
+                    indicator:Show()
+                    indicator:SetAlphaFromBoolean(isMatch)
+                else
                     indicator:Hide()
                 end
             end

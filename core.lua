@@ -1,6 +1,5 @@
 local addonName, ns = ...
 
--- Upvalues
 local UnitExists = UnitExists
 local string_match = string.match
 local tonumber = tonumber
@@ -10,6 +9,7 @@ local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
 local Settings = Settings
 local PixelUtil = PixelUtil
+local GetPhysicalScreenSize = GetPhysicalScreenSize
 
 -- Pre-fetch these so we don't query C_ClassColor inside the layout loop
 local TEST_COLORS = {
@@ -18,7 +18,6 @@ local TEST_COLORS = {
     [3] = C_ClassColor.GetClassColor("DRUID")
 }
 
--- Default configuration
 ns.defaults = {
     anchor = "BOTTOMLEFT",
     relativePoint = "BOTTOMRIGHT",
@@ -36,13 +35,7 @@ ns.testFrame = nil
 ns.categoryID = nil
 ns.pixelScale = 1
 
--- Updates the cached scale only when necessary (Init or UI Scale change)
-function ns.UpdatePixelScale()
-    ns.pixelScale = PixelUtil.GetPixelToUIUnitFactor()
-    ns.UpdateAll()
-end
-
--- Returns unit class color as RGBA
+-- Return unit class color components
 local function GetUnitColor(unit)
     if UnitExists(unit) then
         local _, classFilename = UnitClass(unit)
@@ -56,33 +49,47 @@ local function GetUnitColor(unit)
     return nil
 end
 
--- Updates the layout for a single container and its indicators
+-- Round value to nearest physical pixel relative to scale
+local function SnapToScale(val, px)
+    return math.floor(val / px + 0.5) * px
+end
+
+-- Update layout for a specific container and its indicators
 function ns.UpdateContainerLayout(container)
     local db = ns.db or ns.defaults
 
-    local px = ns.pixelScale
+    -- Calculate pixel density relative to container effective scale
+    local screenHeight = select(2, GetPhysicalScreenSize())
+    local scale = container:GetEffectiveScale()
+    if scale == 0 then scale = 1 end
+    local px = (768.0 / screenHeight) / scale
 
-    -- Position container handle
+    -- Snap container anchor to global pixel grid
     container:ClearAllPoints()
     local anchor = db.anchor or ns.defaults.anchor
     local relPoint = db.relativePoint or ns.defaults.relativePoint
-
     PixelUtil.SetPoint(container, anchor, container:GetParent(), relPoint, db.x, db.y)
 
-    -- Update indicators
     local grow = db.growDirection or "RIGHT"
-    local size = db.size or 12
-    local spacing = db.spacing or 2
+    local rawSize = db.size or 12
+    local rawSpacing = db.spacing or 2
+
+    -- Snap dimensions to local pixel grid
+    local size = SnapToScale(rawSize, px)
+    local spacing = SnapToScale(rawSpacing, px)
+
+    -- Calculate inner size for exact 1px border
+    local innerSize = size - (2 * px)
+    if innerSize < 0 then innerSize = 0 end
 
     for i, indicator in ipairs(container.arenaEnemyIndicators) do
-        PixelUtil.SetSize(indicator, size, size)
+        indicator:SetSize(size, size)
+        indicator.inner:SetSize(innerSize, innerSize)
 
-        -- Update 1px border
+        -- Center inner texture for symmetry
         indicator.inner:ClearAllPoints()
-        indicator.inner:SetPoint("TOPLEFT", indicator, "TOPLEFT", px, -px)
-        indicator.inner:SetPoint("BOTTOMRIGHT", indicator, "BOTTOMRIGHT", -px, px)
+        indicator.inner:SetPoint("CENTER", indicator, "CENTER", 0, 0)
 
-        -- Index text
         if db.showIndex then
             indicator.text:Show()
             indicator.text:SetText(i)
@@ -92,25 +99,27 @@ function ns.UpdateContainerLayout(container)
             indicator.text:Hide()
         end
 
-        -- Positioning
         indicator:ClearAllPoints()
 
         if i == 1 then
-            PixelUtil.SetPoint(indicator, anchor, container, anchor, 0, 0)
+             -- First indicator anchors to container handle
+             indicator:SetPoint(anchor, container, anchor, 0, 0)
         else
+            -- Subsequent indicators chain to previous to prevent rounding drift
             local prev = container.arenaEnemyIndicators[i - 1]
+
             if grow == "RIGHT" then
-                PixelUtil.SetPoint(indicator, "LEFT", prev, "RIGHT", spacing, 0)
+                indicator:SetPoint("LEFT", prev, "RIGHT", spacing, 0)
             elseif grow == "LEFT" then
-                PixelUtil.SetPoint(indicator, "RIGHT", prev, "LEFT", -spacing, 0)
+                indicator:SetPoint("RIGHT", prev, "LEFT", -spacing, 0)
             elseif grow == "UP" then
-                PixelUtil.SetPoint(indicator, "BOTTOM", prev, "TOP", 0, spacing)
+                indicator:SetPoint("BOTTOM", prev, "TOP", 0, spacing)
             elseif grow == "DOWN" then
-                PixelUtil.SetPoint(indicator, "TOP", prev, "BOTTOM", 0, -spacing)
+                indicator:SetPoint("TOP", prev, "BOTTOM", 0, -spacing)
             end
         end
 
-        -- Test Frame Logic
+        -- Apply dummy data if attached to test frame
         if container:GetParent() == ns.testFrame then
             indicator:Show()
             indicator:SetAlpha(1)
@@ -124,20 +133,17 @@ function ns.UpdateContainerLayout(container)
     end
 end
 
--- Force update all containers
+-- Force layout refresh for all containers
 function ns.UpdateAll()
-    -- Ensure scale is fresh before a mass update (safety check)
-    if not ns.pixelScale then ns.UpdatePixelScale() end
-
     for _, container in ipairs(ns.containers) do
         ns.UpdateContainerLayout(container)
     end
 end
 
--- Initialize a new container frame
+-- Initialize container frame and indicator pool
 function ns.CreateContainer(parent)
     local container = CreateFrame("Frame", nil, parent)
-    PixelUtil.SetSize(container, 1, 1)
+    container:SetSize(1, 1)
 
     container.arenaEnemyIndicators = {}
 
@@ -168,7 +174,7 @@ function ns.CreateContainer(parent)
     return container
 end
 
--- Test Frame Management
+-- Create standalone frame for configuration testing
 function ns.CreateTestFrame()
     if ns.testFrame then return end
 
@@ -191,9 +197,19 @@ function ns.CreateTestFrame()
     border:SetColorTexture(0, 0, 0, 1)
 
     local bg = f:CreateTexture(nil, "BORDER")
-    local px = ns.pixelScale or PixelUtil.GetPixelToUIUnitFactor()
-    bg:SetPoint("TOPLEFT", f, "TOPLEFT", px, -px)
-    bg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -px, px)
+
+    -- Localized pixel snapping for test frame border
+    local screenHeight = select(2, GetPhysicalScreenSize())
+    local fScale = f:GetEffectiveScale()
+    if fScale == 0 then fScale = 1 end
+    local px = (768.0 / screenHeight) / fScale
+
+    local w = math.floor(width / px + 0.5) * px
+    local h = math.floor(height / px + 0.5) * px
+    f:SetSize(w, h)
+
+    bg:SetPoint("CENTER", f, "CENTER", 0, 0)
+    bg:SetSize(w - 2*px, h - 2*px)
 
     local _, class = UnitClass("player")
     local c = C_ClassColor.GetClassColor(class or "PRIEST")
@@ -229,7 +245,6 @@ function ns.ToggleTestMode(enable)
     ns.UpdateAll()
 end
 
--- Slash Command Handler
 function ns.SlashCommandHandler(msg)
     local command = msg:lower()
 
@@ -256,10 +271,9 @@ function ns.SlashCommandHandler(msg)
     end
 end
 
--- Events & Initialization
+-- Initialize add-on and attach to party frames
 function ns.Init()
     ns.CreateTestFrame()
-    ns.UpdatePixelScale()
 
     for i = 1, 5 do
         local frameName = "CompactPartyFrameMember" .. i
@@ -273,17 +287,11 @@ end
 
 function ns.SetupSystemEvents()
     local systemListener = CreateFrame("FRAME")
-    systemListener:RegisterEvent("PLAYER_ENTERING_WORLD")
-    systemListener:RegisterEvent("GROUP_ROSTER_UPDATE")
     systemListener:RegisterEvent("UI_SCALE_CHANGED")
     systemListener:RegisterEvent("DISPLAY_SIZE_CHANGED")
 
-    systemListener:SetScript("OnEvent", function(self, event)
-        if event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
-            ns.UpdatePixelScale()
-        else
-            ns.Init()
-        end
+    systemListener:SetScript("OnEvent", function()
+        ns.UpdateAll()
     end)
 end
 
@@ -298,15 +306,12 @@ function ns.SetupCombatEvents()
         local unitTarget = unit .. "target"
         local r, g, b = GetUnitColor(unit)
 
-        -- Iterate containers once, handling both Show and Hide logic inside
         for _, container in ipairs(ns.containers) do
             local parent = container:GetParent()
 
-            -- Test Frame handles its own coloring, so we skip it
             if parent ~= ns.testFrame then
                 local indicator = container.arenaEnemyIndicators[arenaIndex]
 
-                -- Valid enemy color AND Valid parent unit
                 if r and parent.unit then
                     local isMatch = UnitIsUnit(unitTarget, parent.unit)
                     indicator.inner:SetColorTexture(r, g, b, 1)

@@ -8,6 +8,7 @@ local pairs = pairs
 local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
 local Settings = Settings
+local PixelUtil = PixelUtil
 
 -- Default configuration
 ns.defaults = {
@@ -44,19 +45,30 @@ end
 function ns.UpdateContainerLayout(container)
     local db = ns.db or ns.defaults
 
-    -- Position container handle
+    -- Get exact size of 1 physical pixel
+    local px = PixelUtil.GetPixelToUIUnitFactor()
+
+    -- Position container handle (Snapped to pixel grid)
     container:ClearAllPoints()
     local anchor = db.anchor or ns.defaults.anchor
     local relPoint = db.relativePoint or ns.defaults.relativePoint
-    container:SetPoint(anchor, container:GetParent(), relPoint, db.x, db.y)
+
+    -- PixelUtil.SetPoint automatically snaps the offset to the nearest physical pixel
+    PixelUtil.SetPoint(container, anchor, container:GetParent(), relPoint, db.x, db.y)
 
     -- Update indicators
     local grow = db.growDirection or "RIGHT"
-    local spacing = db.spacing or 2
     local size = db.size or 12
+    local spacing = db.spacing or 2
 
     for i, indicator in ipairs(container.arenaEnemyIndicators) do
-        indicator:SetSize(size, size)
+        -- PixelUtil.SetSize snaps the width/height to prevent blurring
+        PixelUtil.SetSize(indicator, size, size)
+
+        -- We manually use 'px' here to ensure the border is exactly 1 physical pixel wide
+        indicator.inner:ClearAllPoints()
+        indicator.inner:SetPoint("TOPLEFT", indicator, "TOPLEFT", px, -px)
+        indicator.inner:SetPoint("BOTTOMRIGHT", indicator, "BOTTOMRIGHT", -px, px)
 
         -- Index text
         if db.showIndex then
@@ -73,17 +85,17 @@ function ns.UpdateContainerLayout(container)
 
         if i == 1 then
             -- Mirror anchor to ensure precise corner alignment
-            indicator:SetPoint(anchor, container, anchor, 0, 0)
+            PixelUtil.SetPoint(indicator, anchor, container, anchor, 0, 0)
         else
             local prev = container.arenaEnemyIndicators[i - 1]
             if grow == "RIGHT" then
-                indicator:SetPoint("LEFT", prev, "RIGHT", spacing, 0)
+                PixelUtil.SetPoint(indicator, "LEFT", prev, "RIGHT", spacing, 0)
             elseif grow == "LEFT" then
-                indicator:SetPoint("RIGHT", prev, "LEFT", -spacing, 0)
+                PixelUtil.SetPoint(indicator, "RIGHT", prev, "LEFT", -spacing, 0)
             elseif grow == "UP" then
-                indicator:SetPoint("BOTTOM", prev, "TOP", 0, spacing)
+                PixelUtil.SetPoint(indicator, "BOTTOM", prev, "TOP", 0, spacing)
             elseif grow == "DOWN" then
-                indicator:SetPoint("TOP", prev, "BOTTOM", 0, -spacing)
+                PixelUtil.SetPoint(indicator, "TOP", prev, "BOTTOM", 0, -spacing)
             end
         end
 
@@ -119,7 +131,8 @@ end
 -- Initialize a new container frame
 function ns.CreateContainer(parent)
     local container = CreateFrame("Frame", nil, parent)
-    container:SetSize(1, 1)
+    -- Use PixelUtil to snap the container size (probably unnecessary)
+    PixelUtil.SetSize(container, 1, 1)
 
     container.arenaEnemyIndicators = {}
 
@@ -127,13 +140,13 @@ function ns.CreateContainer(parent)
         local indicator = CreateFrame("Frame", nil, container)
         indicator:SetFrameLevel(parent:GetFrameLevel() + 10)
 
+        -- Outer Border (Black)
         local border = indicator:CreateTexture(nil, "BACKGROUND")
         border:SetAllPoints()
         border:SetColorTexture(0, 0, 0, 1)
 
+        -- Inner Color (Inset handled in UpdateLayout)
         local inner = indicator:CreateTexture(nil, "ARTWORK")
-        inner:SetPoint("TOPLEFT", indicator, "TOPLEFT", 1, -1)
-        inner:SetPoint("BOTTOMRIGHT", indicator, "BOTTOMRIGHT", -1, 1)
         indicator.inner = inner
 
         local text = indicator:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -177,8 +190,9 @@ function ns.CreateTestFrame()
 
     -- Class colored background
     local bg = f:CreateTexture(nil, "BORDER")
-    bg:SetPoint("TOPLEFT", f, "TOPLEFT", 1, -1)
-    bg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -1, 1)
+    local px = PixelUtil.GetPixelToUIUnitFactor()
+    bg:SetPoint("TOPLEFT", f, "TOPLEFT", px, -px)
+    bg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -px, px)
 
     local _, class = UnitClass("player")
     local c = C_ClassColor.GetClassColor(class or "PRIEST")
@@ -228,7 +242,6 @@ function ns.SlashCommandHandler(msg)
         end
         ns.UpdateAll()
 
-        -- FIX: Force options UI to refresh if open
         if ns.RefreshOptionUI then ns.RefreshOptionUI() end
 
         print("|cff33ff99ArenaTargeted:|r Settings reset to default.")

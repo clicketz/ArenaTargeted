@@ -39,7 +39,7 @@ ns.pixelScale = 1
 -- Updates the cached scale only when necessary (Init or UI Scale change)
 function ns.UpdatePixelScale()
     ns.pixelScale = PixelUtil.GetPixelToUIUnitFactor()
-    -- If we had a live layout update requirement on scale change, we could call UpdateAll() here
+    ns.UpdateAll()
 end
 
 -- Returns unit class color as RGBA

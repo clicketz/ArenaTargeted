@@ -10,4 +10,10 @@
     This lightweight addon will put little indicator boxes to the right of your party frames in 2s/3s/shuffle indicating, by class color, which arena enemy is targeting that person.
   </samp>
 
+  <br><br>
+
+  <samp>
+    /at for settings.
+  </samp>
+
 </div>

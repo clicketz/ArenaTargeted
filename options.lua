@@ -164,7 +164,7 @@ function ns.SetupOptions()
     lastWidget = testBtn
 
     -- Visual settings
-    lastWidget = CreateCheckbox("Show Indicator Numbers", "showIndex", panel, lastWidget)
+    lastWidget = CreateCheckbox("Show Arena ID#", "showIndex", panel, lastWidget)
     lastWidget = CreateSlider("Indicator Size", "size", panel, lastWidget, 5, 30, 1)
     lastWidget = CreateSlider("Spacing", "spacing", panel, lastWidget, 0, 10, 1)
 

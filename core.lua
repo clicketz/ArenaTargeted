@@ -237,7 +237,8 @@ function ns.SlashCommandHandler(msg)
         local currentlyShown = ns.testFrame and ns.testFrame:IsShown()
         ns.ToggleTestMode(not currentlyShown)
     elseif command == "reset" then
-        ns.db = {}
+        -- Wipe table in-place to preserve reference to SavedVariable
+        wipe(ns.db)
         for k, v in pairs(ns.defaults) do
             ns.db[k] = v
         end

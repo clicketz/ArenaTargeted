@@ -1,5 +1,8 @@
 local _, ns = ...
 local Settings = Settings
+local GetPhysicalScreenSize = GetPhysicalScreenSize
+local UnitClass = UnitClass
+local C_ClassColor = C_ClassColor
 
 -- Widget Constructor: Checkbox
 local function CreateCheckbox(label, key, parent, anchorTo, refreshFuncs)
@@ -58,10 +61,12 @@ end
 local function CreateDropdown(label, key, parent, anchorTo, options, refreshFuncs)
     local fontString = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     fontString:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -20)
+    fontString:SetWidth(110)
+    fontString:SetJustifyH("LEFT")
     fontString:SetText(label)
 
     local dd = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
-    dd:SetPoint("LEFT", fontString, "RIGHT", 10, -2)
+    dd:SetPoint("LEFT", fontString, "RIGHT", 0, -2)
     UIDropDownMenu_SetWidth(dd, 120)
 
     local function Init(self, level)
@@ -93,7 +98,65 @@ local function CreateDropdown(label, key, parent, anchorTo, options, refreshFunc
     return fontString
 end
 
--- Initialize Options Panel
+local function CreateButton(label, parent, anchorTo, width, onClick)
+    local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    btn:SetSize(width, 25)
+    btn:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -20)
+    btn:SetText(label)
+    btn:SetScript("OnClick", onClick)
+    return btn
+end
+
+-- ---------------------------------------------------------
+-- Test Frame Configuration
+-- ---------------------------------------------------------
+
+local function CreateTestFrame(parent)
+    local width, height = 100, 50
+    local f = CreateFrame("Frame", "ArenaTargetedPreview", parent)
+    f:SetSize(width, height)
+    f:SetPoint("TOPLEFT", parent, "TOPLEFT", 350, -250)
+
+    local border = f:CreateTexture(nil, "BACKGROUND")
+    border:SetAllPoints()
+    border:SetColorTexture(0, 0, 0, 1)
+
+    local bg = f:CreateTexture(nil, "BORDER")
+
+    -- Calculate pixel snapping for the preview frame
+    local screenHeight = select(2, GetPhysicalScreenSize())
+    local fScale = f:GetEffectiveScale()
+    if fScale == 0 then fScale = 1 end
+    local px = (768.0 / screenHeight) / fScale
+
+    local w = math.floor(width / px + 0.5) * px
+    local h = math.floor(height / px + 0.5) * px
+    f:SetSize(w, h)
+
+    bg:SetPoint("CENTER", f, "CENTER", 0, 0)
+    bg:SetSize(w - 2*px, h - 2*px)
+
+    local _, class = UnitClass("player")
+    local c = C_ClassColor.GetClassColor(class or "PRIEST")
+    bg:SetColorTexture(c.r, c.g, c.b, 1)
+
+    local text = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    text:SetPoint("BOTTOM", f, "TOP", 0, 10)
+    text:SetText("Preview")
+    text:SetTextColor(1, 1, 1, 1)
+
+    -- Initialize container and flag as test mode
+    f.ATPContainer = ns.CreateContainer(f)
+    f.ATPContainer.isTest = true
+
+    f:Show()
+    ns.UpdateAll()
+end
+
+-- ---------------------------------------------------------
+-- Main Options Setup
+-- ---------------------------------------------------------
+
 function ns.SetupOptions()
     local panel = CreateFrame("Frame")
     panel.name = "ArenaTargeted"
@@ -107,10 +170,11 @@ function ns.SetupOptions()
         for _, func in ipairs(refreshFuncs) do func() end
     end
 
-    -- Help Sidebar
+    -- Slash Command Help Panel
     local helpPanel = CreateFrame("Frame", nil, panel)
-    helpPanel:SetSize(200, 150)
+    helpPanel:SetSize(200, 100)
     helpPanel:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -20, -20)
+
     local helpTitle = helpPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     helpTitle:SetPoint("TOPLEFT", 0, 0)
     helpTitle:SetText("Slash Commands")
@@ -128,24 +192,10 @@ function ns.SetupOptions()
 
     local lastHelp = helpTitle
     lastHelp = AddCommand("/at", "Open this options menu", lastHelp)
-    lastHelp = AddCommand("/at test", "Toggle Test Mode frame", lastHelp)
-    lastHelp = AddCommand("/at reset", "Reset all settings to default", lastHelp)
+    lastHelp = AddCommand("/at reset", "Reset all settings", lastHelp)
 
-    -- Build UI
+    -- Options Panel Layout
     local lastWidget = title
-
-    local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    testBtn:SetSize(140, 25)
-    testBtn:SetPoint("TOPLEFT", lastWidget, "BOTTOMLEFT", 0, -20)
-
-    local isTestOn = ns.testFrame and ns.testFrame:IsShown()
-    testBtn:SetText(isTestOn and "Hide Test Frame" or "Show Test Frame")
-    testBtn:SetScript("OnClick", function(self)
-        local currentlyShown = ns.testFrame and ns.testFrame:IsShown()
-        ns.ToggleTestMode(not currentlyShown)
-        self:SetText(not currentlyShown and "Hide Test Frame" or "Show Test Frame")
-    end)
-    lastWidget = testBtn
 
     lastWidget = CreateCheckbox("Show Arena ID#", "showIndex", panel, lastWidget, refreshFuncs)
     lastWidget = CreateSlider("Indicator Size", "size", panel, lastWidget, 5, 30, 1, refreshFuncs)
@@ -160,6 +210,14 @@ function ns.SetupOptions()
 
     lastWidget = CreateSlider("X Offset", "x", panel, lastWidget, -50, 50, 1, refreshFuncs)
     lastWidget = CreateSlider("Y Offset", "y", panel, lastWidget, -50, 50, 1, refreshFuncs)
+
+    -- Reset Button
+    lastWidget = CreateButton("Reset to Defaults", panel, lastWidget, 140, function()
+        ns.ResetSettings()
+    end)
+
+    -- Embed Test Frame
+    CreateTestFrame(panel)
 
     if Settings and Settings.RegisterCanvasLayoutCategory then
         local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)

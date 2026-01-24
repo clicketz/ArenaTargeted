@@ -31,11 +31,10 @@ ns.defaults = {
 }
 
 ns.containers = {}
-ns.testFrame = nil
 ns.categoryID = nil
 ns.pixelScale = 1
 
--- Return unit class color components
+-- Returns unit class color as RGBA
 local function GetUnitColor(unit)
     if UnitExists(unit) then
         local _, classFilename = UnitClass(unit)
@@ -58,7 +57,7 @@ end
 function ns.UpdateContainerLayout(container)
     local db = ns.db or ns.defaults
 
-    -- Calculate pixel density relative to container effective scale
+    -- Calculate pixel size relative to the container's effective scale
     local screenHeight = select(2, GetPhysicalScreenSize())
     local scale = container:GetEffectiveScale()
     if scale == 0 then scale = 1 end
@@ -105,7 +104,7 @@ function ns.UpdateContainerLayout(container)
              -- First indicator anchors to container handle
              indicator:SetPoint(anchor, container, anchor, 0, 0)
         else
-            -- Subsequent indicators chain to previous to prevent rounding drift
+            -- Anchor subsequent indicators to the previous one to prevent rounding drift
             local prev = container.arenaEnemyIndicators[i - 1]
 
             if grow == "RIGHT" then
@@ -119,8 +118,8 @@ function ns.UpdateContainerLayout(container)
             end
         end
 
-        -- Apply dummy data if attached to test frame
-        if container:GetParent() == ns.testFrame then
+        -- Apply dummy data for test containers
+        if container.isTest then
             indicator:Show()
             indicator:SetAlpha(1)
             local c = TEST_COLORS[i]
@@ -174,94 +173,24 @@ function ns.CreateContainer(parent)
     return container
 end
 
--- Create standalone frame for configuration testing
-function ns.CreateTestFrame()
-    if ns.testFrame then return end
-
-    local width, height = 100, 50
-    local scale = 1
-
-    local realFrame = _G["CompactPartyFrameMember1"]
-    if realFrame and realFrame:IsVisible() then
-        width, height = realFrame:GetSize()
-        scale = realFrame:GetEffectiveScale() / UIParent:GetScale()
-    end
-
-    local f = CreateFrame("Frame", "ArenaTargetedTestFrame", UIParent)
-    f:SetSize(width, height)
-    f:SetScale(scale)
-    f:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-
-    local border = f:CreateTexture(nil, "BACKGROUND")
-    border:SetAllPoints()
-    border:SetColorTexture(0, 0, 0, 1)
-
-    local bg = f:CreateTexture(nil, "BORDER")
-
-    -- Localized pixel snapping for test frame border
-    local screenHeight = select(2, GetPhysicalScreenSize())
-    local fScale = f:GetEffectiveScale()
-    if fScale == 0 then fScale = 1 end
-    local px = (768.0 / screenHeight) / fScale
-
-    local w = math.floor(width / px + 0.5) * px
-    local h = math.floor(height / px + 0.5) * px
-    f:SetSize(w, h)
-
-    bg:SetPoint("CENTER", f, "CENTER", 0, 0)
-    bg:SetSize(w - 2*px, h - 2*px)
-
-    local _, class = UnitClass("player")
-    local c = C_ClassColor.GetClassColor(class or "PRIEST")
-    bg:SetColorTexture(c.r, c.g, c.b, 1)
-
-    local text = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    text:SetPoint("BOTTOM", f, "TOP", 0, 10)
-    text:SetText("ArenaTargeted Test")
-    text:SetTextColor(1, 1, 1, 1)
-
-    f.ATPContainer = ns.CreateContainer(f)
-
-    f:Hide()
-    ns.testFrame = f
-
-    f:SetMovable(true)
-    f:EnableMouse(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
-end
-
-function ns.ToggleTestMode(enable)
-    if not ns.testFrame then ns.CreateTestFrame() end
-
-    if enable then
-        ns.testFrame:Show()
-        print("|cff33ff99ArenaTargeted:|r Test Mode Enabled")
-    else
-        ns.testFrame:Hide()
-        print("|cff33ff99ArenaTargeted:|r Test Mode Disabled")
+-- Resets settings to default values
+function ns.ResetSettings()
+    wipe(ns.db)
+    for k, v in pairs(ns.defaults) do
+        ns.db[k] = v
     end
     ns.UpdateAll()
+
+    -- Update options UI if currently open
+    if ns.RefreshOptionUI then ns.RefreshOptionUI() end
+    print("|cff33ff99ArenaTargeted:|r Settings reset to default.")
 end
 
 function ns.SlashCommandHandler(msg)
     local command = msg:lower()
 
-    if command == "test" then
-        local currentlyShown = ns.testFrame and ns.testFrame:IsShown()
-        ns.ToggleTestMode(not currentlyShown)
-    elseif command == "reset" then
-        -- Wipe table in-place to preserve reference to SavedVariable
-        wipe(ns.db)
-        for k, v in pairs(ns.defaults) do
-            ns.db[k] = v
-        end
-        ns.UpdateAll()
-
-        if ns.RefreshOptionUI then ns.RefreshOptionUI() end
-
-        print("|cff33ff99ArenaTargeted:|r Settings reset to default.")
+    if command == "reset" then
+        ns.ResetSettings()
     else
         if Settings and Settings.OpenToCategory then
             Settings.OpenToCategory(ns.categoryID)
@@ -273,8 +202,6 @@ end
 
 -- Initialize add-on and attach to party frames
 function ns.Init()
-    ns.CreateTestFrame()
-
     for i = 1, 5 do
         local frameName = "CompactPartyFrameMember" .. i
         local parentFrame = _G[frameName]
@@ -309,7 +236,8 @@ function ns.SetupCombatEvents()
         for _, container in ipairs(ns.containers) do
             local parent = container:GetParent()
 
-            if parent ~= ns.testFrame then
+            -- Skip test containers during combat events
+            if not container.isTest then
                 local indicator = container.arenaEnemyIndicators[arenaIndex]
 
                 if r and parent.unit then

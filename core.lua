@@ -1,16 +1,32 @@
-local _, ns = ...
+local addonName, ns = ...
 
--- Upvalues
 local UnitExists = UnitExists
 local string_match = string.match
 local tonumber = tonumber
 local ipairs = ipairs
+local pairs = pairs
 local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
+local Settings = Settings
+
+-- Default configuration
+ns.defaults = {
+    anchor = "BOTTOMLEFT",
+    relativePoint = "BOTTOMRIGHT",
+    x = 2,
+    y = 0,
+    growDirection = "RIGHT",
+    spacing = 2,
+    size = 12,
+    showIndex = false,
+    fontSize = 10,
+}
 
 ns.containers = {}
+ns.testFrame = nil
+ns.categoryID = nil
 
--- Returns nil if unit or class is invalid
+-- Returns unit class color as RGBA
 local function GetUnitColor(unit)
     if UnitExists(unit) then
         local _, classFilename = UnitClass(unit)
@@ -24,34 +40,105 @@ local function GetUnitColor(unit)
     return nil
 end
 
+-- Updates the layout for a single container and its indicators
+function ns.UpdateContainerLayout(container)
+    local db = ns.db or ns.defaults
+
+    -- Position container handle
+    container:ClearAllPoints()
+    local anchor = db.anchor or ns.defaults.anchor
+    local relPoint = db.relativePoint or ns.defaults.relativePoint
+    container:SetPoint(anchor, container:GetParent(), relPoint, db.x, db.y)
+
+    -- Update indicators
+    local grow = db.growDirection or "RIGHT"
+    local spacing = db.spacing or 2
+    local size = db.size or 12
+
+    for i, indicator in ipairs(container.arenaEnemyIndicators) do
+        indicator:SetSize(size, size)
+
+        -- Index text
+        if db.showIndex then
+            indicator.text:Show()
+            indicator.text:SetText(i)
+            local fName, _, fFlags = indicator.text:GetFont()
+            indicator.text:SetFont(fName, db.fontSize or 10, fFlags)
+        else
+            indicator.text:Hide()
+        end
+
+        -- Positioning
+        indicator:ClearAllPoints()
+
+        if i == 1 then
+            -- Mirror anchor to ensure precise corner alignment
+            indicator:SetPoint(anchor, container, anchor, 0, 0)
+        else
+            local prev = container.arenaEnemyIndicators[i - 1]
+            if grow == "RIGHT" then
+                indicator:SetPoint("LEFT", prev, "RIGHT", spacing, 0)
+            elseif grow == "LEFT" then
+                indicator:SetPoint("RIGHT", prev, "LEFT", -spacing, 0)
+            elseif grow == "UP" then
+                indicator:SetPoint("BOTTOM", prev, "TOP", 0, spacing)
+            elseif grow == "DOWN" then
+                indicator:SetPoint("TOP", prev, "BOTTOM", 0, -spacing)
+            end
+        end
+
+        -- Apply dummy data if attached to test frame
+        if container:GetParent() == ns.testFrame then
+            indicator:Show()
+            indicator:SetAlpha(1)
+            local c
+            if i == 1 then
+                c = C_ClassColor.GetClassColor("MAGE")
+            elseif i == 2 then
+                c = C_ClassColor.GetClassColor("ROGUE")
+            elseif i == 3 then
+                c = C_ClassColor.GetClassColor("DRUID")
+            end
+
+            if c then
+                indicator.inner:SetColorTexture(c.r, c.g, c.b, 1)
+            else
+                indicator.inner:SetColorTexture(1, 1, 1, 1)
+            end
+        end
+    end
+end
+
+-- Force update all containers
+function ns.UpdateAll()
+    for _, container in ipairs(ns.containers) do
+        ns.UpdateContainerLayout(container)
+    end
+end
+
+-- Initialize a new container frame
 function ns.CreateContainer(parent)
     local container = CreateFrame("Frame", nil, parent)
-    container:SetSize(60, 20)
-    container:SetPoint("BOTTOMLEFT", parent, "BOTTOMRIGHT", 2, 0)
+    container:SetSize(1, 1)
 
     container.arenaEnemyIndicators = {}
 
-    -- TODO: Add indicator options
     for i = 1, 3 do
         local indicator = CreateFrame("Frame", nil, container)
-        indicator:SetSize(12, 12)
+        indicator:SetFrameLevel(parent:GetFrameLevel() + 10)
 
-        -- Black Border
         local border = indicator:CreateTexture(nil, "BACKGROUND")
         border:SetAllPoints()
         border:SetColorTexture(0, 0, 0, 1)
 
-        -- "Inner" texture for coloring
         local inner = indicator:CreateTexture(nil, "ARTWORK")
         inner:SetPoint("TOPLEFT", indicator, "TOPLEFT", 1, -1)
         inner:SetPoint("BOTTOMRIGHT", indicator, "BOTTOMRIGHT", -1, 1)
         indicator.inner = inner
 
-        if i == 1 then
-            indicator:SetPoint("LEFT", container, "LEFT", 0, 0)
-        else
-            indicator:SetPoint("LEFT", container.arenaEnemyIndicators[i - 1], "RIGHT", 2, 0)
-        end
+        local text = indicator:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        text:SetPoint("CENTER", indicator, "CENTER", 0, 0)
+        indicator.text = text
 
         indicator:Hide()
         container.arenaEnemyIndicators[i] = indicator
@@ -60,10 +147,104 @@ function ns.CreateContainer(parent)
     container:Show()
     table.insert(ns.containers, container)
 
+    ns.UpdateContainerLayout(container)
+
     return container
 end
 
+-- Test Frame Management
+function ns.CreateTestFrame()
+    if ns.testFrame then return end
+
+    local width, height = 100, 50
+    local scale = 1
+
+    local realFrame = _G["CompactPartyFrameMember1"]
+    if realFrame and realFrame:IsVisible() then
+        width, height = realFrame:GetSize()
+        scale = realFrame:GetEffectiveScale() / UIParent:GetScale()
+    end
+
+    local f = CreateFrame("Frame", "ArenaTargetedTestFrame", UIParent)
+    f:SetSize(width, height)
+    f:SetScale(scale)
+    f:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+
+    -- Black border
+    local border = f:CreateTexture(nil, "BACKGROUND")
+    border:SetAllPoints()
+    border:SetColorTexture(0, 0, 0, 1)
+
+    -- Class colored background
+    local bg = f:CreateTexture(nil, "BORDER")
+    bg:SetPoint("TOPLEFT", f, "TOPLEFT", 1, -1)
+    bg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -1, 1)
+
+    local _, class = UnitClass("player")
+    local c = C_ClassColor.GetClassColor(class or "PRIEST")
+    bg:SetColorTexture(c.r, c.g, c.b, 1)
+
+    local text = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    text:SetPoint("BOTTOM", f, "TOP", 0, 10)
+    text:SetText("ArenaTargeted Test")
+    text:SetTextColor(1, 1, 1, 1)
+
+    f.ATPContainer = ns.CreateContainer(f)
+
+    f:Hide()
+    ns.testFrame = f
+
+    f:SetMovable(true)
+    f:EnableMouse(true)
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", f.StartMoving)
+    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+end
+
+function ns.ToggleTestMode(enable)
+    if not ns.testFrame then ns.CreateTestFrame() end
+
+    if enable then
+        ns.testFrame:Show()
+        print("|cff33ff99ArenaTargeted:|r Test Mode Enabled")
+    else
+        ns.testFrame:Hide()
+        print("|cff33ff99ArenaTargeted:|r Test Mode Disabled")
+    end
+    ns.UpdateAll()
+end
+
+-- Slash Command Handler
+function ns.SlashCommandHandler(msg)
+    local command = msg:lower()
+
+    if command == "test" then
+        local currentlyShown = ns.testFrame and ns.testFrame:IsShown()
+        ns.ToggleTestMode(not currentlyShown)
+    elseif command == "reset" then
+        ns.db = {}
+        for k, v in pairs(ns.defaults) do
+            ns.db[k] = v
+        end
+        ns.UpdateAll()
+
+        -- FIX: Force options UI to refresh if open
+        if ns.RefreshOptionUI then ns.RefreshOptionUI() end
+
+        print("|cff33ff99ArenaTargeted:|r Settings reset to default.")
+    else
+        if Settings and Settings.OpenToCategory then
+            Settings.OpenToCategory(ns.categoryID)
+        else
+            InterfaceOptionsFrame_OpenToCategory("ArenaTargeted")
+        end
+    end
+end
+
+-- Events & Initialization
 function ns.Init()
+    ns.CreateTestFrame()
+
     for i = 1, 5 do
         local frameName = "CompactPartyFrameMember" .. i
         local parentFrame = _G[frameName]
@@ -98,34 +279,51 @@ function ns.SetupCombatEvents()
         if r then
             for _, container in ipairs(ns.containers) do
                 local parent = container:GetParent()
-                local indicator = container.arenaEnemyIndicators[arenaIndex]
-
-                if parent.unit then
-                    -- UnitIsUnit returns a secret value
-                    local isMatch = UnitIsUnit(unitTarget, parent.unit)
-
-                    indicator.inner:SetColorTexture(r, g, b, 1)
-                    indicator:Show()
-
-                    -- Use SetAlphaFromBoolean to safely handle secret value
-                    indicator:SetAlphaFromBoolean(isMatch)
-                else
-                    indicator:Hide()
+                if parent ~= ns.testFrame then
+                    local indicator = container.arenaEnemyIndicators[arenaIndex]
+                    if parent.unit then
+                        local isMatch = UnitIsUnit(unitTarget, parent.unit)
+                        indicator.inner:SetColorTexture(r, g, b, 1)
+                        indicator:Show()
+                        indicator:SetAlphaFromBoolean(isMatch)
+                    else
+                        indicator:Hide()
+                    end
                 end
             end
         else
             for _, container in ipairs(ns.containers) do
-                local indicator = container.arenaEnemyIndicators[arenaIndex]
-                indicator:Hide()
+                if container:GetParent() ~= ns.testFrame then
+                    local indicator = container.arenaEnemyIndicators[arenaIndex]
+                    indicator:Hide()
+                end
             end
         end
     end)
 end
 
-function ns.OnInitialize()
-    --ns.SetupSystemEvents()
-    ns.SetupCombatEvents()
-    ns.Init()
-end
+local loader = CreateFrame("Frame")
+loader:RegisterEvent("ADDON_LOADED")
+loader:SetScript("OnEvent", function(self, event, arg1)
+    if event == "ADDON_LOADED" and arg1 == addonName then
+        if not ArenaTargetedDB then ArenaTargetedDB = {} end
+        ns.db = ArenaTargetedDB
 
-ns.OnInitialize()
+        for k, v in pairs(ns.defaults) do
+            if ns.db[k] == nil then ns.db[k] = v end
+        end
+
+        ns.SetupSystemEvents()
+        ns.SetupCombatEvents()
+        ns.Init()
+
+        if ns.SetupOptions then
+            ns.SetupOptions()
+        end
+
+        SLASH_ARENATARGETED1 = "/at"
+        SlashCmdList["ARENATARGETED"] = function(msg) ns.SlashCommandHandler(msg) end
+
+        self:UnregisterEvent("ADDON_LOADED")
+    end
+end)

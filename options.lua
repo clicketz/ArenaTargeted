@@ -1,6 +1,7 @@
 local _, ns = ...
 local Settings = Settings
 
+-- Widget generator: Checkbox
 local function CreateCheckbox(label, key, parent, anchorTo, refreshFuncs)
     local cb = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
     cb:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -10)
@@ -22,6 +23,7 @@ local function CreateCheckbox(label, key, parent, anchorTo, refreshFuncs)
     return cb
 end
 
+-- Widget generator: Slider
 local function CreateSlider(label, key, parent, anchorTo, minVal, maxVal, step, refreshFuncs)
     local slider = CreateFrame("Slider", nil, parent, "OptionsSliderTemplate")
     slider:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -30)
@@ -52,6 +54,7 @@ local function CreateSlider(label, key, parent, anchorTo, minVal, maxVal, step, 
     return slider
 end
 
+-- Widget generator: Dropdown
 local function CreateDropdown(label, key, parent, anchorTo, options, refreshFuncs)
     local fontString = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     fontString:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -20)
@@ -90,6 +93,7 @@ local function CreateDropdown(label, key, parent, anchorTo, options, refreshFunc
     return fontString
 end
 
+-- Initialize Interface Options panel
 function ns.SetupOptions()
     local panel = CreateFrame("Frame")
     panel.name = "ArenaTargeted"
@@ -103,7 +107,7 @@ function ns.SetupOptions()
         for _, func in ipairs(refreshFuncs) do func() end
     end
 
-    -- Sidebar
+    -- Help Sidebar
     local helpPanel = CreateFrame("Frame", nil, panel)
     helpPanel:SetSize(200, 150)
     helpPanel:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -20, -20)
@@ -127,7 +131,7 @@ function ns.SetupOptions()
     lastHelp = AddCommand("/at test", "Toggle Test Mode frame", lastHelp)
     lastHelp = AddCommand("/at reset", "Reset all settings to default", lastHelp)
 
-    -- Build UI
+    -- Build Layout
     local lastWidget = title
 
     local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")

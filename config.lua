@@ -20,6 +20,7 @@ ns.defaults = {
     growDirection = "RIGHT",
     spacing = 2,
     size = 12,
+    borderSize = 1,
     showIndex = false,
     fontSize = 10,
     shape = "Square",

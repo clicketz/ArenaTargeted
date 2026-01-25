@@ -64,13 +64,22 @@ end
 -- @param width The total width of the indicator.
 -- @param height The total height of the indicator.
 -- @param px The pixel scale (returned from GetPixelScale).
-function ns.SetupCenteredInset(indicator, width, height, px)
-    local innerW = width - (2 * px)
-    local innerH = height - (2 * px)
+-- @param borderSize The border size in physical pixels.
+function ns.SetupCenteredInset(indicator, width, height, px, borderSize)
+    -- Default to 1 if nil
+    local bSize = borderSize or 1
+
+    -- Calculate the inset thickness (Physical Pixels * Border Size)
+    local inset = bSize * px
+
+    -- Inner size is Total - (Inset on Left + Inset on Right)
+    local innerW = width - (2 * inset)
+    local innerH = height - (2 * inset)
 
     if innerW < 0 then innerW = 0 end
     if innerH < 0 then innerH = 0 end
 
+    -- Ensure the border texture fills the frame
     indicator.border:ClearAllPoints()
     indicator.border:SetAllPoints()
     indicator.border:Show()

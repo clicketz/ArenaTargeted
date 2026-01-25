@@ -33,6 +33,8 @@ function ns.UpdateContainerLayout(container)
     local grow = db.growDirection or ns.defaults.growDirection
     local spacing = ns.SnapToScale(db.spacing or ns.defaults.spacing, px)
 
+    local borderSize = db.borderSize or ns.defaults.borderSize
+
     for i, indicator in ipairs(container.arenaEnemyIndicators) do
         indicator:SetSize(width, height)
 

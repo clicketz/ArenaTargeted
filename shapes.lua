@@ -15,10 +15,11 @@ ns.shapes = {
             local s = ns.SnapToScale(db.size or ns.defaults.size, px)
             return s, s
         end,
+
         -- Square has a black border and inset color
-        Setup = function(indicator, width, height, px)
+        Setup = function(indicator, width, height, px, borderSize)
             ns.SetupTextureState(indicator, ns.CONSTANTS.TEXTURE_WHITE, false)
-            ns.SetupCenteredInset(indicator, width, height, px)
+            ns.SetupCenteredInset(indicator, width, height, px, borderSize)
         end
     },
     ["Line"] = {
@@ -37,9 +38,9 @@ ns.shapes = {
             local h = ns.SnapToScale(rawHeight, px)
             return w, h
         end,
-        Setup = function(indicator, width, height, px)
+        Setup = function(indicator, width, height, px, borderSize)
             ns.SetupTextureState(indicator, ns.CONSTANTS.TEXTURE_WHITE, false)
-            ns.SetupCenteredInset(indicator, width, height, px)
+            ns.SetupCenteredInset(indicator, width, height, px, borderSize)
         end
     },
     ["Triangle"] = {
@@ -47,10 +48,10 @@ ns.shapes = {
             local s = ns.SnapToScale(db.size or ns.defaults.size, px)
             return s, s
         end,
-        Setup = function(indicator, width, height, px)
+        Setup = function(indicator, width, height, px, borderSize)
             -- Triangles must be desaturated to be tinted correctly by SetVertexColor
             ns.SetupTextureState(indicator, ns.CONSTANTS.TEXTURE_TRIANGLE, true)
-            ns.SetupCenteredInset(indicator, width, height, px)
+            ns.SetupCenteredInset(indicator, width, height, px, borderSize)
         end
     }
 }

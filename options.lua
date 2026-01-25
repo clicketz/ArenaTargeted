@@ -243,6 +243,9 @@ function ns.SetupOptions()
     -- Indicator Size
     lastWidget = CreateSlider("Size", "size", panel, lastWidget, 5, 30, 1, refreshFuncs)
 
+    -- Border Thickness
+    lastWidget = CreateSlider("Border Thickness", "borderSize", panel, lastWidget, 1, 5, 1, refreshFuncs)
+
     -- Spacing
     lastWidget = CreateSlider("Spacing", "spacing", panel, lastWidget, 0, 10, 1, refreshFuncs)
 

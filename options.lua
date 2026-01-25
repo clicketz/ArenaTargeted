@@ -111,19 +111,30 @@ end
 -- Test Frame Configuration
 -- ---------------------------------------------------------
 
-local function CreateTestFrame(parent)
-    local width, height = 100, 50
-    local f = CreateFrame("Frame", "ArenaTargetedPreview", parent)
+local function UpdatePreviewState(f)
+    -- Default dimensions fallback
+    local width, height = 120, 60
+    local scale = 1
+
+    -- Attempt to fetch real dimensions from the live UI
+    local realFrame = _G["CompactPartyFrameMember1"]
+
+    if realFrame then
+        width, height = realFrame:GetSize()
+
+        -- Calculate scale relative to parent
+        -- This logic must run in OnShow to get the correct parent effective scale
+        local parent = f:GetParent()
+        local parentScale = parent and parent:GetEffectiveScale() or 1
+        if parentScale > 0 then
+            scale = realFrame:GetEffectiveScale() / parentScale
+        end
+    end
+
     f:SetSize(width, height)
-    f:SetPoint("TOPLEFT", parent, "TOPLEFT", 350, -250)
+    f:SetScale(scale)
 
-    local border = f:CreateTexture(nil, "BACKGROUND")
-    border:SetAllPoints()
-    border:SetColorTexture(0, 0, 0, 1)
-
-    local bg = f:CreateTexture(nil, "BORDER")
-
-    -- Calculate pixel snapping for the preview frame
+    -- Recalculate pixel snapping with the new size/scale
     local screenHeight = select(2, GetPhysicalScreenSize())
     local fScale = f:GetEffectiveScale()
     if fScale == 0 then fScale = 1 end
@@ -133,12 +144,28 @@ local function CreateTestFrame(parent)
     local h = math.floor(height / px + 0.5) * px
     f:SetSize(w, h)
 
-    bg:SetPoint("CENTER", f, "CENTER", 0, 0)
-    bg:SetSize(w - 2*px, h - 2*px)
+    if f.bg then
+        f.bg:SetPoint("CENTER", f, "CENTER", 0, 0)
+        f.bg:SetSize(w - 2*px, h - 2*px)
+    end
+end
+
+local function CreateTestFrame(parent)
+    local f = CreateFrame("Frame", "ArenaTargetedPreview", parent)
+    f:SetPoint("TOPLEFT", parent, "TOPLEFT", 350, -250)
+
+    -- Initial placeholder size
+    f:SetSize(120, 60)
+
+    local border = f:CreateTexture(nil, "BACKGROUND")
+    border:SetAllPoints()
+    border:SetColorTexture(0, 0, 0, 1)
+
+    f.bg = f:CreateTexture(nil, "BORDER")
 
     local _, class = UnitClass("player")
     local c = C_ClassColor.GetClassColor(class or "PRIEST")
-    bg:SetColorTexture(c.r, c.g, c.b, 1)
+    f.bg:SetColorTexture(c.r, c.g, c.b, 1)
 
     local text = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     text:SetPoint("BOTTOM", f, "TOP", 0, 10)
@@ -148,6 +175,15 @@ local function CreateTestFrame(parent)
     -- Initialize container and flag as test mode
     f.ATPContainer = ns.CreateContainer(f)
     f.ATPContainer.isTest = true
+
+    -- We hook OnShow because parent scales are often invalid at creation time
+    f:SetScript("OnShow", function(self)
+        UpdatePreviewState(self)
+        ns.UpdateAll()
+    end)
+
+    -- Also run once immediately to set initial state
+    UpdatePreviewState(f)
 
     f:Show()
     ns.UpdateAll()
@@ -159,11 +195,11 @@ end
 
 function ns.SetupOptions()
     local panel = CreateFrame("Frame")
-    panel.name = "ArenaTargeted"
+    panel.name = addonName
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText("ArenaTargeted")
+    title:SetText(addonName)
 
     local version = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
@@ -199,7 +235,8 @@ function ns.SetupOptions()
     end
 
     local lastHelp = helpTitle
-    lastHelp = AddCommand("/at or /arenatargeted", "Open this options menu", lastHelp)
+    lastHelp = AddCommand("/at", "Open this options menu", lastHelp)
+    lastHelp = AddCommand("/arenatargeted", "Alias for /at", lastHelp)
     lastHelp = AddCommand("/at reset", "Reset all settings", lastHelp)
 
     -- Options Panel Layout

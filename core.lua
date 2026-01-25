@@ -67,11 +67,13 @@ function ns.UpdateContainerLayout(container)
     container:ClearAllPoints()
     local anchor = db.anchor or ns.defaults.anchor
     local relPoint = db.relativePoint or ns.defaults.relativePoint
-    PixelUtil.SetPoint(container, anchor, container:GetParent(), relPoint, db.x, db.y)
+    local x = db.x or ns.defaults.x
+    local y = db.y or ns.defaults.y
+    PixelUtil.SetPoint(container, anchor, container:GetParent(), relPoint, x, y)
 
-    local grow = db.growDirection or "RIGHT"
-    local rawSize = db.size or 12
-    local rawSpacing = db.spacing or 2
+    local grow = db.growDirection or ns.defaults.growDirection
+    local rawSize = db.size or ns.defaults.size
+    local rawSpacing = db.spacing or ns.defaults.spacing
 
     -- Snap dimensions to local pixel grid
     local size = SnapToScale(rawSize, px)

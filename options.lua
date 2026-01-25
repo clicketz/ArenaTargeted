@@ -1,4 +1,4 @@
-local _, ns = ...
+local addonName, ns = ...
 local Settings = Settings
 local GetPhysicalScreenSize = GetPhysicalScreenSize
 local UnitClass = UnitClass
@@ -163,7 +163,15 @@ function ns.SetupOptions()
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText("ArenaTargeted Settings")
+    title:SetText("ArenaTargeted")
+
+    local version = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+    version:SetText("Version: " .. tostring(C_AddOns.GetAddOnMetadata(addonName, "Version") or "Unknown"))
+
+    local author = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    author:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -4)
+    author:SetText("Author: " .. tostring(C_AddOns.GetAddOnMetadata(addonName, "Author") or "Unknown"))
 
     local refreshFuncs = {}
     function ns.RefreshOptionUI()
@@ -195,7 +203,7 @@ function ns.SetupOptions()
     lastHelp = AddCommand("/at reset", "Reset all settings", lastHelp)
 
     -- Options Panel Layout
-    local lastWidget = title
+    local lastWidget = author
 
     lastWidget = CreateCheckbox("Show Arena ID#", "showIndex", panel, lastWidget, refreshFuncs)
     lastWidget = CreateSlider("Indicator Size", "size", panel, lastWidget, 5, 30, 1, refreshFuncs)

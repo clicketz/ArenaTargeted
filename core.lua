@@ -267,9 +267,12 @@ function ns.SetupCombatEvents()
                 if indicator then
                     -- If the enemy exists (r is valid) and we have a valid party unit to compare against
                     if r and parent.unit then
+                        -- NOTE: UnitIsUnit returns a secret value in midnight
                         local isMatch = UnitIsUnit(unitTarget, parent.unit)
                         indicator.inner:SetColorTexture(r, g, b, 1)
                         indicator:Show()
+
+                        -- SetAlphaFromBoolean can safely handle secret values
                         indicator:SetAlphaFromBoolean(isMatch)
                     else
                         -- Enemy left or data invalid -> Hide

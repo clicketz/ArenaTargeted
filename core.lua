@@ -39,7 +39,7 @@ function ns.UpdateContainerLayout(container)
         indicator:SetSize(width, height)
 
         -- Apply shape styling (Sets the texture file/shape)
-        shapeDef.Setup(indicator, width, height, px)
+        shapeDef.Setup(indicator, width, height, px, borderSize)
 
         if db.showIndex then
             indicator.text:Show()

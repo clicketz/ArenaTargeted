@@ -1,15 +1,12 @@
 local addonName, ns = ...
 
-local UnitExists = UnitExists
 local string_match = string.match
 local tonumber = tonumber
 local ipairs = ipairs
 local pairs = pairs
-local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
 local Settings = Settings
 local PixelUtil = PixelUtil
-local GetPhysicalScreenSize = GetPhysicalScreenSize
 
 -- Pre-fetch these so we don't query C_ClassColor inside the layout loop
 local TEST_COLORS = {
@@ -34,34 +31,10 @@ ns.containers = {}
 ns.categoryID = nil
 ns.pixelScale = 1
 
--- Returns unit class color as RGBA
-local function GetUnitColor(unit)
-    if UnitExists(unit) then
-        local _, classFilename = UnitClass(unit)
-        if classFilename then
-            local color = C_ClassColor.GetClassColor(classFilename)
-            if color then
-                return color.r, color.g, color.b, 1
-            end
-        end
-    end
-    return nil
-end
-
--- Round value to nearest physical pixel relative to scale
-local function SnapToScale(val, px)
-    return math.floor(val / px + 0.5) * px
-end
-
 -- Update layout for a specific container and its indicators
 function ns.UpdateContainerLayout(container)
     local db = ns.db or ns.defaults
-
-    -- Calculate pixel size relative to the container's effective scale
-    local screenHeight = select(2, GetPhysicalScreenSize())
-    local scale = container:GetEffectiveScale()
-    if scale == 0 then scale = 1 end
-    local px = (768.0 / screenHeight) / scale
+    local px = ns.GetPixelScale(container)
 
     -- Snap container anchor to global pixel grid
     container:ClearAllPoints()
@@ -75,9 +48,8 @@ function ns.UpdateContainerLayout(container)
     local rawSize = db.size or ns.defaults.size
     local rawSpacing = db.spacing or ns.defaults.spacing
 
-    -- Snap dimensions to local pixel grid
-    local size = SnapToScale(rawSize, px)
-    local spacing = SnapToScale(rawSpacing, px)
+    local size = ns.SnapToScale(rawSize, px)
+    local spacing = ns.SnapToScale(rawSpacing, px)
 
     -- Calculate inner size for exact 1px border
     local innerSize = size - (2 * px)
@@ -95,7 +67,7 @@ function ns.UpdateContainerLayout(container)
             indicator.text:Show()
             indicator.text:SetText(i)
             local fName, _, fFlags = indicator.text:GetFont()
-            indicator.text:SetFont(fName, db.fontSize or 10, fFlags)
+            indicator.text:SetFont(fName, db.fontSize or ns.defaults.fontSize, fFlags)
         else
             indicator.text:Hide()
         end
@@ -255,7 +227,7 @@ function ns.SetupCombatEvents()
         if not arenaIndex then return end
 
         local unitTarget = unit .. "target"
-        local r, g, b = GetUnitColor(unit)
+        local r, g, b = ns.GetUnitColor(unit)
 
         for _, container in ipairs(ns.containers) do
             local parent = container:GetParent()

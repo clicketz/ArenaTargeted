@@ -8,5 +8,6 @@
 ## IconTexture: Interface\Icons\ability_hunter_snipershot
 ## SavedVariables: ArenaTargetedDB
 
+helpers.lua
 core.lua
 options.lua

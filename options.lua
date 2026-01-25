@@ -1,6 +1,5 @@
 local addonName, ns = ...
 local Settings = Settings
-local GetPhysicalScreenSize = GetPhysicalScreenSize
 local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
 
@@ -134,14 +133,10 @@ local function UpdatePreviewState(f)
     f:SetSize(width, height)
     f:SetScale(scale)
 
-    -- Recalculate pixel snapping with the new size/scale
-    local screenHeight = select(2, GetPhysicalScreenSize())
-    local fScale = f:GetEffectiveScale()
-    if fScale == 0 then fScale = 1 end
-    local px = (768.0 / screenHeight) / fScale
+    local px = ns.GetPixelScale(f)
+    local w = ns.SnapToScale(width, px)
+    local h = ns.SnapToScale(height, px)
 
-    local w = math.floor(width / px + 0.5) * px
-    local h = math.floor(height / px + 0.5) * px
     f:SetSize(w, h)
 
     if f.bg then

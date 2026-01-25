@@ -242,7 +242,7 @@ function ns.SetupOptions()
     lastWidget = CreateCheckbox("Show Arena ID#", "showIndex", panel, lastWidget, refreshFuncs)
 
     -- Indicator Size
-    lastWidget = CreateSlider("Indicator Size", "size", panel, lastWidget, 5, 30, 1, refreshFuncs)
+    lastWidget = CreateSlider("Size", "size", panel, lastWidget, 5, 30, 1, refreshFuncs)
 
     -- Spacing
     lastWidget = CreateSlider("Spacing", "spacing", panel, lastWidget, 0, 10, 1, refreshFuncs)
@@ -254,7 +254,7 @@ function ns.SetupOptions()
     end
     table.sort(shapes)
 
-    lastWidget = CreateDropdown("Indicator Shape:", "shape", panel, lastWidget, shapes, refreshFuncs)
+    lastWidget = CreateDropdown("Shape:", "shape", panel, lastWidget, shapes, refreshFuncs)
 
     -- Anchors
     local anchors = { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT" }

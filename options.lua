@@ -107,7 +107,7 @@ local function CreateButton(label, parent, anchorTo, width, onClick)
 end
 
 -- ---------------------------------------------------------
--- Test Frame Configuration
+-- Preview Frame Configuration
 -- ---------------------------------------------------------
 
 local function UpdatePreviewState(f)
@@ -145,7 +145,7 @@ local function UpdatePreviewState(f)
     end
 end
 
-local function CreateTestFrame(parent)
+local function CreatePreviewFrame(parent)
     local f = CreateFrame("Frame", "ArenaTargetedPreview", parent)
     f:SetPoint("TOPLEFT", parent, "TOPLEFT", 350, -250)
 
@@ -167,9 +167,9 @@ local function CreateTestFrame(parent)
     text:SetText("Preview")
     text:SetTextColor(1, 1, 1, 1)
 
-    -- Initialize container and flag as test mode
+    -- Initialize container and flag as preview
     f.ATPContainer = ns.CreateContainer(f)
-    f.ATPContainer.isTest = true
+    f.ATPContainer.isPreview = true
 
     -- We hook OnShow because parent scales are often invalid at creation time
     f:SetScript("OnShow", function(self)
@@ -256,8 +256,8 @@ function ns.SetupOptions()
         ns.ResetSettings()
     end)
 
-    -- Embed Test Frame
-    CreateTestFrame(panel)
+    -- Embed Preview Frame
+    CreatePreviewFrame(panel)
 
     if Settings and Settings.RegisterCanvasLayoutCategory then
         local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)

@@ -9,7 +9,7 @@ local Settings = Settings
 local PixelUtil = PixelUtil
 
 -- Pre-fetch these so we don't query C_ClassColor inside the layout loop
-local TEST_COLORS = {
+local PREVIEW_COLORS = {
     [1] = C_ClassColor.GetClassColor("MAGE"),
     [2] = C_ClassColor.GetClassColor("ROGUE"),
     [3] = C_ClassColor.GetClassColor("DRUID")
@@ -92,11 +92,11 @@ function ns.UpdateContainerLayout(container)
             end
         end
 
-        -- Apply dummy data for test containers
-        if container.isTest then
+        -- Apply dummy data for preview container
+        if container.isPreview then
             indicator:Show()
             indicator:SetAlpha(1)
-            local c = TEST_COLORS[i]
+            local c = PREVIEW_COLORS[i]
             if c then
                 indicator.inner:SetColorTexture(c.r, c.g, c.b, 1)
             else
@@ -117,7 +117,7 @@ end
 function ns.ResetIndicators()
     for _, container in ipairs(ns.containers) do
         -- Only hide indicators on real party frames, leave preview frames alone
-        if not container.isTest then
+        if not container.isPreview then
             for _, indicator in ipairs(container.arenaEnemyIndicators) do
                 indicator:Hide()
             end
@@ -232,8 +232,8 @@ function ns.SetupCombatEvents()
         for _, container in ipairs(ns.containers) do
             local parent = container:GetParent()
 
-            -- Skip test containers during combat events
-            if not container.isTest then
+            -- Skip preview containers during combat events
+            if not container.isPreview then
                 local indicator = container.arenaEnemyIndicators[arenaIndex]
 
                 if indicator then

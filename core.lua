@@ -101,8 +101,8 @@ function ns.UpdateContainerLayout(container)
         indicator:ClearAllPoints()
 
         if i == 1 then
-             -- First indicator anchors to container handle
-             indicator:SetPoint(anchor, container, anchor, 0, 0)
+            -- First indicator anchors to container handle
+            indicator:SetPoint(anchor, container, anchor, 0, 0)
         else
             -- Anchor subsequent indicators to the previous one to prevent rounding drift
             local prev = container.arenaEnemyIndicators[i - 1]
@@ -262,15 +262,17 @@ function ns.SetupCombatEvents()
             if not container.isTest then
                 local indicator = container.arenaEnemyIndicators[arenaIndex]
 
-                -- If the enemy exists (r is valid) and we have a valid party unit to compare against
-                if r and parent.unit then
-                    local isMatch = UnitIsUnit(unitTarget, parent.unit)
-                    indicator.inner:SetColorTexture(r, g, b, 1)
-                    indicator:Show()
-                    indicator:SetAlphaFromBoolean(isMatch)
-                else
-                    -- Enemy left or data invalid -> Hide
-                    indicator:Hide()
+                if indicator then
+                    -- If the enemy exists (r is valid) and we have a valid party unit to compare against
+                    if r and parent.unit then
+                        local isMatch = UnitIsUnit(unitTarget, parent.unit)
+                        indicator.inner:SetColorTexture(r, g, b, 1)
+                        indicator:Show()
+                        indicator:SetAlphaFromBoolean(isMatch)
+                    else
+                        -- Enemy left or data invalid -> Hide
+                        indicator:Hide()
+                    end
                 end
             end
         end
@@ -297,7 +299,7 @@ loader:SetScript("OnEvent", function(self, event, arg1)
         end
 
         SLASH_ARENATARGETED1 = "/at"
-        SLASH_ARENATARGETED1 = "/arenatargeted"
+        SLASH_ARENATARGETED2 = "/arenatargeted"
         SlashCmdList["ARENATARGETED"] = function(msg) ns.SlashCommandHandler(msg) end
 
         self:UnregisterEvent("ADDON_LOADED")

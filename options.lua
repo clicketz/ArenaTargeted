@@ -199,7 +199,7 @@ function ns.SetupOptions()
     end
 
     local lastHelp = helpTitle
-    lastHelp = AddCommand("/at", "Open this options menu", lastHelp)
+    lastHelp = AddCommand("/at or /arenatargeted", "Open this options menu", lastHelp)
     lastHelp = AddCommand("/at reset", "Reset all settings", lastHelp)
 
     -- Options Panel Layout

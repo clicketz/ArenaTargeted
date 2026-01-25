@@ -297,6 +297,7 @@ loader:SetScript("OnEvent", function(self, event, arg1)
         end
 
         SLASH_ARENATARGETED1 = "/at"
+        SLASH_ARENATARGETED1 = "/arenatargeted"
         SlashCmdList["ARENATARGETED"] = function(msg) ns.SlashCommandHandler(msg) end
 
         self:UnregisterEvent("ADDON_LOADED")

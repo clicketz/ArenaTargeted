@@ -44,6 +44,20 @@ function ns.GetUnitColor(unit)
     return nil
 end
 
+-- Helper to reset texture state (File, Desaturation, Default Color)
+-- @param indicator The indicator frame
+-- @param texture The texture file path
+-- @param desaturate Boolean to desaturate the texture
+function ns.SetupTextureState(indicator, texture, desaturate)
+    indicator.border:SetTexture(texture)
+    indicator.border:SetDesaturated(desaturate)
+    indicator.border:SetVertexColor(0, 0, 0, 1) -- Always black border
+
+    indicator.inner:SetTexture(texture)
+    indicator.inner:SetDesaturated(desaturate)
+    indicator.inner:SetVertexColor(1, 1, 1, 1) -- Always white inner (tinted later)
+end
+
 -- Generic helper that centers the inner texture inside the border
 -- with a specific pixel inset. Works for any shape that is centered in its file.
 -- @param indicator The indicator frame to adjust.
@@ -57,7 +71,10 @@ function ns.SetupCenteredInset(indicator, width, height, px)
     if innerW < 0 then innerW = 0 end
     if innerH < 0 then innerH = 0 end
 
+    indicator.border:ClearAllPoints()
+    indicator.border:SetAllPoints()
     indicator.border:Show()
+
     indicator.inner:ClearAllPoints()
     indicator.inner:SetPoint("CENTER", indicator, "CENTER", 0, 0)
     indicator.inner:SetSize(innerW, innerH)

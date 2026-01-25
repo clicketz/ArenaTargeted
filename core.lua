@@ -139,7 +139,19 @@ function ns.UpdateAll()
     end
 end
 
--- Initialize container frame and indicator pool
+-- Helper to force hide all indicators (e.g. when leaving arena)
+function ns.ResetIndicators()
+    for _, container in ipairs(ns.containers) do
+        -- Only hide indicators on real party frames, leave preview frames alone
+        if not container.isTest then
+            for _, indicator in ipairs(container.arenaEnemyIndicators) do
+                indicator:Hide()
+            end
+        end
+    end
+end
+
+-- Initializes a container frame and indicator pool
 function ns.CreateContainer(parent)
     local container = CreateFrame("Frame", nil, parent)
     container:SetSize(1, 1)
@@ -200,7 +212,7 @@ function ns.SlashCommandHandler(msg)
     end
 end
 
--- Initialize add-on and attach to party frames
+-- Initializes the addon and attaches containers to party frames
 function ns.Init()
     for i = 1, 5 do
         local frameName = "CompactPartyFrameMember" .. i
@@ -224,10 +236,20 @@ end
 
 function ns.SetupCombatEvents()
     local combatListener = CreateFrame("FRAME", nil, UIParent)
+    -- Standard target updates
     combatListener:RegisterUnitEvent("UNIT_TARGET", "arena1", "arena2", "arena3")
+    -- Handle enemies leaving the game (or stealthing/vanishing)
+    combatListener:RegisterEvent("ARENA_OPPONENT_UPDATE")
+    -- Handle player leaving the arena (clears stuck indicators)
+    combatListener:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-    combatListener:SetScript("OnEvent", function(_, _, unit)
-        local arenaIndex = tonumber(string_match(unit, "arena(%d+)"))
+    combatListener:SetScript("OnEvent", function(self, event, unit)
+        if event == "PLAYER_ENTERING_WORLD" then
+            ns.ResetIndicators()
+            return
+        end
+
+        local arenaIndex = tonumber(string_match(unit or "", "arena(%d+)"))
         if not arenaIndex then return end
 
         local unitTarget = unit .. "target"
@@ -240,12 +262,14 @@ function ns.SetupCombatEvents()
             if not container.isTest then
                 local indicator = container.arenaEnemyIndicators[arenaIndex]
 
+                -- If the enemy exists (r is valid) and we have a valid party unit to compare against
                 if r and parent.unit then
                     local isMatch = UnitIsUnit(unitTarget, parent.unit)
                     indicator.inner:SetColorTexture(r, g, b, 1)
                     indicator:Show()
                     indicator:SetAlphaFromBoolean(isMatch)
                 else
+                    -- Enemy left or data invalid -> Hide
                     indicator:Hide()
                 end
             end

@@ -147,7 +147,7 @@ end
 
 local function CreatePreviewFrame(parent)
     local f = CreateFrame("Frame", "ArenaTargetedPreview", parent)
-    f:SetPoint("TOPLEFT", parent, "TOPLEFT", 350, -250)
+    f:SetPoint("TOPLEFT", parent, "TOPLEFT", 400, -250)
 
     -- Initial placeholder size
     f:SetSize(120, 60)

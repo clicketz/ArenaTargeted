@@ -9,6 +9,7 @@
 ## SavedVariables: ArenaTargetedDB
 
 helpers.lua
+config.lua
 shapes.lua
 core.lua
 options.lua

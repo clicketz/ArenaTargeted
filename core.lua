@@ -4,29 +4,8 @@ local string_match = string.match
 local tonumber = tonumber
 local ipairs = ipairs
 local pairs = pairs
-local C_ClassColor = C_ClassColor
 local Settings = Settings
 local PixelUtil = PixelUtil
-
--- Pre-fetch these so we don't query C_ClassColor inside the layout loop
-local PREVIEW_COLORS = {
-    [1] = C_ClassColor.GetClassColor("MAGE"),
-    [2] = C_ClassColor.GetClassColor("ROGUE"),
-    [3] = C_ClassColor.GetClassColor("DRUID")
-}
-
-ns.defaults = {
-    anchor = "BOTTOMLEFT",
-    relativePoint = "BOTTOMRIGHT",
-    x = 2,
-    y = 0,
-    growDirection = "RIGHT",
-    spacing = 2,
-    size = 12,
-    showIndex = false,
-    fontSize = 10,
-    shape = "Square",
-}
 
 ns.containers = {}
 ns.categoryID = nil
@@ -91,13 +70,14 @@ function ns.UpdateContainerLayout(container)
 
         -- Apply dummy data for preview container
         if container.isPreview then
-            indicator:Show()
-            indicator:SetAlpha(1)
-            local c = PREVIEW_COLORS[i]
-            if c then
+            -- Only show the first 3 for preview to keep it clean, but backend supports 5
+            local c = ns.PREVIEW_COLORS[i]
+            if c and i <= 3 then
+                indicator:Show()
+                indicator:SetAlpha(1)
                 indicator.inner:SetVertexColor(c.r, c.g, c.b, 1)
             else
-                indicator.inner:SetVertexColor(1, 1, 1, 1)
+                indicator:Hide()
             end
         end
     end
@@ -129,7 +109,8 @@ function ns.CreateContainer(parent)
 
     container.arenaEnemyIndicators = {}
 
-    for i = 1, 3 do
+    -- Initialize for MAX_ARENA_ENEMIES (5) to ensure robustness
+    for i = 1, ns.CONSTANTS.MAX_ARENA_ENEMIES do
         local indicator = CreateFrame("Frame", nil, container)
         indicator:SetFrameLevel(parent:GetFrameLevel() + 10)
 
@@ -216,11 +197,10 @@ end
 
 function ns.SetupCombatEvents()
     local combatListener = CreateFrame("FRAME", nil, UIParent)
-    -- Standard target updates
-    combatListener:RegisterUnitEvent("UNIT_TARGET", "arena1", "arena2", "arena3")
-    -- Handle enemies leaving the game (or stealthing/vanishing)
+    -- Register all potential arena enemies (1-5)
+    -- NOTE: Registering 5 because blizzard sometimes sends arena4/5 in events even in smaller brackets
+    combatListener:RegisterUnitEvent("UNIT_TARGET", "arena1", "arena2", "arena3", "arena4", "arena5")
     combatListener:RegisterEvent("ARENA_OPPONENT_UPDATE")
-    -- Handle player leaving the arena (clears stuck indicators)
     combatListener:RegisterEvent("PLAYER_ENTERING_WORLD")
 
     combatListener:SetScript("OnEvent", function(self, event, unit)
@@ -233,7 +213,6 @@ function ns.SetupCombatEvents()
         if not arenaIndex then return end
 
         local unitTarget = unit .. "target"
-
         local r, g, b = ns.GetUnitColor(unit)
 
         for _, container in ipairs(ns.containers) do

@@ -25,6 +25,7 @@ ns.defaults = {
     size = 12,
     showIndex = false,
     fontSize = 10,
+    shape = "Square",
 }
 
 ns.containers = {}
@@ -35,6 +36,11 @@ ns.pixelScale = 1
 function ns.UpdateContainerLayout(container)
     local db = ns.db or ns.defaults
     local px = ns.GetPixelScale(container)
+    local parent = container:GetParent()
+
+    -- Get the current Shape Definition
+    local shapeName = db.shape or ns.defaults.shape
+    local shapeDef = ns.shapes[shapeName] or ns.shapes["Square"]
 
     -- Snap container anchor to global pixel grid
     container:ClearAllPoints()
@@ -42,26 +48,17 @@ function ns.UpdateContainerLayout(container)
     local relPoint = db.relativePoint or ns.defaults.relativePoint
     local x = db.x or ns.defaults.x
     local y = db.y or ns.defaults.y
-    PixelUtil.SetPoint(container, anchor, container:GetParent(), relPoint, x, y)
+    PixelUtil.SetPoint(container, anchor, parent, relPoint, x, y)
 
+    local width, height = shapeDef.GetSize(db, parent, px)
     local grow = db.growDirection or ns.defaults.growDirection
-    local rawSize = db.size or ns.defaults.size
-    local rawSpacing = db.spacing or ns.defaults.spacing
-
-    local size = ns.SnapToScale(rawSize, px)
-    local spacing = ns.SnapToScale(rawSpacing, px)
-
-    -- Calculate inner size for exact 1px border
-    local innerSize = size - (2 * px)
-    if innerSize < 0 then innerSize = 0 end
+    local spacing = ns.SnapToScale(db.spacing or ns.defaults.spacing, px)
 
     for i, indicator in ipairs(container.arenaEnemyIndicators) do
-        indicator:SetSize(size, size)
-        indicator.inner:SetSize(innerSize, innerSize)
+        indicator:SetSize(width, height)
 
-        -- Center inner texture for symmetry
-        indicator.inner:ClearAllPoints()
-        indicator.inner:SetPoint("CENTER", indicator, "CENTER", 0, 0)
+        -- Apply shape styling
+        shapeDef.Setup(indicator, width, height, px)
 
         if db.showIndex then
             indicator.text:Show()
@@ -139,6 +136,7 @@ function ns.CreateContainer(parent)
         local border = indicator:CreateTexture(nil, "BACKGROUND")
         border:SetAllPoints()
         border:SetColorTexture(0, 0, 0, 1)
+        indicator.border = border
 
         local inner = indicator:CreateTexture(nil, "ARTWORK")
         indicator.inner = inner
@@ -149,6 +147,13 @@ function ns.CreateContainer(parent)
 
         indicator:Hide()
         container.arenaEnemyIndicators[i] = indicator
+    end
+
+    -- Need to update layout when parent size changes or scaling will be off
+    if parent.HookScript then
+        parent:HookScript("OnSizeChanged", function()
+            ns.UpdateContainerLayout(container)
+        end)
     end
 
     container:Show()

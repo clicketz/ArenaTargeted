@@ -141,7 +141,7 @@ local function UpdatePreviewState(f)
 
     if f.bg then
         f.bg:SetPoint("CENTER", f, "CENTER", 0, 0)
-        f.bg:SetSize(w - 2*px, h - 2*px)
+        f.bg:SetSize(w - 2 * px, h - 2 * px)
     end
 end
 
@@ -238,16 +238,32 @@ function ns.SetupOptions()
     local lastWidget = author
 
     lastWidget = CreateCheckbox("Show Arena ID#", "showIndex", panel, lastWidget, refreshFuncs)
+
+    -- Indicator Size
     lastWidget = CreateSlider("Indicator Size", "size", panel, lastWidget, 5, 30, 1, refreshFuncs)
+
+    -- Spacing
     lastWidget = CreateSlider("Spacing", "spacing", panel, lastWidget, 0, 10, 1, refreshFuncs)
 
+    -- Indicator Shape
+    local shapes = {}
+    for name, _ in pairs(ns.shapes) do
+        table.insert(shapes, name)
+    end
+    table.sort(shapes)
+
+    lastWidget = CreateDropdown("Indicator Shape:", "shape", panel, lastWidget, shapes, refreshFuncs)
+
+    -- Anchors
     local anchors = { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT" }
     lastWidget = CreateDropdown("Anchor:", "anchor", panel, lastWidget, anchors, refreshFuncs)
     lastWidget = CreateDropdown("Relative To:", "relativePoint", panel, lastWidget, anchors, refreshFuncs)
 
+    -- Grow Direction
     local directions = { "RIGHT", "LEFT", "UP", "DOWN" }
     lastWidget = CreateDropdown("Grow Direction:", "growDirection", panel, lastWidget, directions, refreshFuncs)
 
+    -- X/Y Offsets
     lastWidget = CreateSlider("X Offset", "x", panel, lastWidget, -50, 50, 1, refreshFuncs)
     lastWidget = CreateSlider("Y Offset", "y", panel, lastWidget, -50, 50, 1, refreshFuncs)
 

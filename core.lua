@@ -133,6 +133,9 @@ function ns.CreateContainer(parent)
         local indicator = CreateFrame("Frame", nil, container)
         indicator:SetFrameLevel(parent:GetFrameLevel() + 10)
 
+        -- Indicators are purely visual, disable mouse to prevent blocking clicks
+        indicator:EnableMouse(false)
+
         local border = indicator:CreateTexture(nil, "BACKGROUND")
         indicator.border = border
 

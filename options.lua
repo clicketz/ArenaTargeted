@@ -154,13 +154,15 @@ local function CreatePreviewFrame(parent)
 
     local border = f:CreateTexture(nil, "BACKGROUND")
     border:SetAllPoints()
-    border:SetColorTexture(0, 0, 0, 1)
+    border:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    border:SetVertexColor(0, 0, 0, 1)
 
     f.bg = f:CreateTexture(nil, "BORDER")
 
     local _, class = UnitClass("player")
     local c = C_ClassColor.GetClassColor(class or "PRIEST")
-    f.bg:SetColorTexture(c.r, c.g, c.b, 1)
+    f.bg:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    f.bg:SetVertexColor(c.r, c.g, c.b, 1)
 
     local text = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     text:SetPoint("BOTTOM", f, "TOP", 0, 10)

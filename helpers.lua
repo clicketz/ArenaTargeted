@@ -21,7 +21,7 @@ function ns.GetPixelScale(frame)
 end
 
 -- Snaps a value to the nearest physical pixel.
--- @param value The logical value to snap (e.g., width, height, offset).
+-- @param val The logical value to snap (e.g., width, height, offset).
 -- @param px The pixel scale (returned from GetPixelScale).
 -- @return number The snapped value.
 function ns.SnapToScale(val, px)
@@ -42,4 +42,23 @@ function ns.GetUnitColor(unit)
         end
     end
     return nil
+end
+
+-- Generic helper that centers the inner texture inside the border
+-- with a specific pixel inset. Works for any shape that is centered in its file.
+-- @param indicator The indicator frame to adjust.
+-- @param width The total width of the indicator.
+-- @param height The total height of the indicator.
+-- @param px The pixel scale (returned from GetPixelScale).
+function ns.SetupCenteredInset(indicator, width, height, px)
+    local innerW = width - (2 * px)
+    local innerH = height - (2 * px)
+
+    if innerW < 0 then innerW = 0 end
+    if innerH < 0 then innerH = 0 end
+
+    indicator.border:Show()
+    indicator.inner:ClearAllPoints()
+    indicator.inner:SetPoint("CENTER", indicator, "CENTER", 0, 0)
+    indicator.inner:SetSize(innerW, innerH)
 end

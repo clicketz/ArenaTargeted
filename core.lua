@@ -57,7 +57,7 @@ function ns.UpdateContainerLayout(container)
     for i, indicator in ipairs(container.arenaEnemyIndicators) do
         indicator:SetSize(width, height)
 
-        -- Apply shape styling
+        -- Apply shape styling (Sets the texture file/shape)
         shapeDef.Setup(indicator, width, height, px)
 
         if db.showIndex then
@@ -95,9 +95,9 @@ function ns.UpdateContainerLayout(container)
             indicator:SetAlpha(1)
             local c = PREVIEW_COLORS[i]
             if c then
-                indicator.inner:SetColorTexture(c.r, c.g, c.b, 1)
+                indicator.inner:SetVertexColor(c.r, c.g, c.b, 1)
             else
-                indicator.inner:SetColorTexture(1, 1, 1, 1)
+                indicator.inner:SetVertexColor(1, 1, 1, 1)
             end
         end
     end
@@ -134,8 +134,6 @@ function ns.CreateContainer(parent)
         indicator:SetFrameLevel(parent:GetFrameLevel() + 10)
 
         local border = indicator:CreateTexture(nil, "BACKGROUND")
-        border:SetAllPoints()
-        border:SetColorTexture(0, 0, 0, 1)
         indicator.border = border
 
         local inner = indicator:CreateTexture(nil, "ARTWORK")
@@ -232,6 +230,7 @@ function ns.SetupCombatEvents()
         if not arenaIndex then return end
 
         local unitTarget = unit .. "target"
+
         local r, g, b = ns.GetUnitColor(unit)
 
         for _, container in ipairs(ns.containers) do
@@ -246,7 +245,8 @@ function ns.SetupCombatEvents()
                     if r and parent.unit then
                         -- NOTE: UnitIsUnit returns a secret value in midnight
                         local isMatch = UnitIsUnit(unitTarget, parent.unit)
-                        indicator.inner:SetColorTexture(r, g, b, 1)
+
+                        indicator.inner:SetVertexColor(r, g, b, 1)
                         indicator:Show()
 
                         -- SetAlphaFromBoolean can safely handle secret values

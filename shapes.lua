@@ -17,13 +17,13 @@ ns.shapes = {
         end,
         -- Square has a black border and inset color
         Setup = function(indicator, width, height, px)
-            local inner = width - (2 * px)
-            if inner < 0 then inner = 0 end
+            indicator.border:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+            indicator.border:SetVertexColor(0, 0, 0, 1)
 
-            indicator.border:Show()
-            indicator.inner:ClearAllPoints()
-            indicator.inner:SetPoint("CENTER", indicator, "CENTER", 0, 0)
-            indicator.inner:SetSize(inner, inner)
+            indicator.inner:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+            indicator.inner:SetVertexColor(1, 1, 1, 1)
+
+            ns.SetupCenteredInset(indicator, width, height, px)
         end
     },
     ["Line"] = {
@@ -38,22 +38,36 @@ ns.shapes = {
 
             -- Ensure line is at least 1 logical pixel thick so it doesn't vanish
             if rawHeight < 1 then rawHeight = 1 end
-
             local h = ns.SnapToScale(rawHeight, px)
             return w, h
         end,
-        -- Line has a border too (1px black, variable color height, 1px black)
         Setup = function(indicator, width, height, px)
-            local innerW = width - (2 * px)
-            local innerH = height - (2 * px)
+            indicator.border:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+            indicator.border:SetVertexColor(0, 0, 0, 1)
 
-            if innerW < 0 then innerW = 0 end
-            if innerH < 0 then innerH = 0 end
+            indicator.inner:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+            indicator.inner:SetVertexColor(1, 1, 1, 1)
 
-            indicator.border:Show()
-            indicator.inner:ClearAllPoints()
-            indicator.inner:SetPoint("CENTER", indicator, "CENTER", 0, 0)
-            indicator.inner:SetSize(innerW, innerH)
+            ns.SetupCenteredInset(indicator, width, height, px)
+        end
+    },
+    ["Triangle"] = {
+        GetSize = function(db, parent, px)
+            local s = ns.SnapToScale(db.size or ns.defaults.size, px)
+            return s, s
+        end,
+        Setup = function(indicator, width, height, px)
+            local texture = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up"
+
+            indicator.border:SetTexture(texture)
+            indicator.border:SetDesaturated(true)
+            indicator.border:SetVertexColor(0, 0, 0, 1)
+
+            indicator.inner:SetTexture(texture)
+            indicator.inner:SetDesaturated(true)
+            indicator.inner:SetVertexColor(1, 1, 1, 1)
+
+            ns.SetupCenteredInset(indicator, width, height, px)
         end
     }
 }

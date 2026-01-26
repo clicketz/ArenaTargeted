@@ -168,7 +168,7 @@ function ns.SlashCommandHandler(msg)
         if Settings and Settings.OpenToCategory then
             Settings.OpenToCategory(ns.categoryID)
         else
-            InterfaceOptionsFrame_OpenToCategory("ArenaTargeted")
+            InterfaceOptionsFrame_OpenToCategory(addonName)
         end
     end
 end

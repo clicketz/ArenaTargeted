@@ -48,14 +48,112 @@ end
 -- @param indicator The indicator frame
 -- @param texture The texture file path
 -- @param desaturate Boolean to desaturate the texture
-function ns.SetupTextureState(indicator, texture, desaturate)
+-- @param coords Optional texture coordinates {L, R, T, B}
+function ns.SetupTextureState(indicator, texture, desaturate, coords)
+    -- remove all potential masks from previous states
+    local function ClearMask(mask)
+        if mask then
+            indicator.border:RemoveMaskTexture(mask)
+            indicator.inner:RemoveMaskTexture(mask)
+            mask:Hide()
+        end
+    end
+    ClearMask(indicator.mask)
+    ClearMask(indicator.maskBg)
+    ClearMask(indicator.maskFg)
+
+    indicator.border:SetAlpha(1)
+    indicator.inner:SetAlpha(1)
+
     indicator.border:SetTexture(texture)
     indicator.border:SetDesaturated(desaturate)
+    indicator.border:SetBlendMode("BLEND")
     indicator.border:SetVertexColor(0, 0, 0, 1) -- Always black border
 
     indicator.inner:SetTexture(texture)
     indicator.inner:SetDesaturated(desaturate)
+    indicator.inner:SetBlendMode("BLEND")
     indicator.inner:SetVertexColor(1, 1, 1, 1) -- Always white inner (tinted later)
+
+    if not coords then
+        indicator.border:SetTexCoord(0, 1, 0, 1)
+        indicator.inner:SetTexCoord(0, 1, 0, 1)
+    else
+        local L, R, T, B = coords[1], coords[2], coords[3], coords[4]
+        indicator.border:SetTexCoord(L, R, T, B)
+        indicator.inner:SetTexCoord(L, R, T, B)
+    end
+end
+
+-- shifted mask with dual layers (border + inner)
+-- @param indicator The indicator frame to adjust.
+-- @param maskTexture The texture file containing the raid icons.
+-- @param iconIndex The index of the raid icon (1-8).
+-- @param width The total width of the indicator.
+-- @param height The total height of the indicator.
+-- @param px The pixel scale (returned from GetPixelScale).
+-- @param borderSize The border size in physical pixels.
+function ns.SetupShiftedMask(indicator, maskTexture, iconIndex, width, height, px, borderSize)
+    if not indicator.maskBg then indicator.maskBg = indicator:CreateMaskTexture() end
+    if not indicator.maskFg then indicator.maskFg = indicator:CreateMaskTexture() end
+
+    indicator.border:SetAlpha(1)
+    indicator.inner:SetAlpha(1)
+
+    -- detach masks to allow updates
+    indicator.border:RemoveMaskTexture(indicator.maskBg)
+    indicator.inner:RemoveMaskTexture(indicator.maskFg)
+    indicator.maskBg:Show()
+    indicator.maskFg:Show()
+
+    -- calculate grid position
+    local col = (iconIndex - 1) % 4
+    local row = floor((iconIndex - 1) / 4)
+
+    -- bg mask (border)
+    local bgW, bgH = width, height
+    indicator.maskBg:SetTexture(maskTexture, "CLAMP", "CLAMP")
+    indicator.maskBg:SetSize(bgW * 4, bgH * 4)
+
+    local bgOffX = -1 * (col * bgW)
+    local bgOffY = (row * bgH)
+    indicator.maskBg:ClearAllPoints()
+    indicator.maskBg:SetPoint("TOPLEFT", indicator, "TOPLEFT", bgOffX, bgOffY)
+
+    -- fg mask (inner)
+    local bSize = borderSize or 1
+    local inset = bSize * px
+    local fgW = width - (2 * inset)
+    local fgH = height - (2 * inset)
+    if fgW < 0 then fgW = 0 end
+    if fgH < 0 then fgH = 0 end
+
+    indicator.maskFg:SetTexture(maskTexture, "CLAMP", "CLAMP")
+    indicator.maskFg:SetSize(fgW * 4, fgH * 4)
+
+    local fgOffX = -1 * (col * fgW)
+    local fgOffY = (row * fgH)
+    -- Anchor to 'inner' because 'inner' is already positioned/inset correctly
+    indicator.maskFg:ClearAllPoints()
+    indicator.maskFg:SetPoint("TOPLEFT", indicator.inner, "TOPLEFT", fgOffX, fgOffY)
+
+    -- actual border
+    indicator.border:SetTexture(ns.CONSTANTS.TEXTURE_WHITE)
+    indicator.border:SetTexCoord(0, 1, 0, 1)
+    indicator.border:SetDesaturated(false)
+    indicator.border:SetBlendMode("BLEND")
+    indicator.border:SetVertexColor(0, 0, 0, 1)
+
+    -- actual "inner" (class colored frame)
+    indicator.inner:SetTexture(ns.CONSTANTS.TEXTURE_WHITE)
+    indicator.inner:SetTexCoord(0, 1, 0, 1)
+    indicator.inner:SetDesaturated(false)
+    indicator.inner:SetBlendMode("BLEND")
+    indicator.inner:SetVertexColor(1, 1, 1, 1)
+
+    -- apply our masks
+    indicator.border:AddMaskTexture(indicator.maskBg)
+    indicator.inner:AddMaskTexture(indicator.maskFg)
 end
 
 -- Generic helper that centers the inner texture inside the border

@@ -8,10 +8,19 @@ local C_ClassColor = C_ClassColor
 ns.CONSTANTS = {
     MAX_ARENA_ENEMIES = 5,
     TEXTURE_WHITE = "Interface\\BUTTONS\\WHITE8X8",
-    TEXTURE_TRIANGLE = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up",
+    TEXTURE_RAID_ICONS = "Interface\\TargetingFrame\\UI-RaidTargetingIcons",
+    RAID_ICON_INDICES = {
+        ["Star"]     = 1,
+        ["Circle"]   = 2,
+        ["Diamond"]  = 3,
+        ["Triangle"] = 4,
+        ["Moon"]     = 5,
+        ["Square"]   = 6,
+        ["Cross"]    = 7,
+        ["Skull"]    = 8,
+    }
 }
 
--- Default settings for the DB
 ns.defaults = {
     anchor = "BOTTOMLEFT",
     relativePoint = "BOTTOMRIGHT",
@@ -23,7 +32,7 @@ ns.defaults = {
     borderSize = 1,
     showIndex = false,
     fontSize = 10,
-    shape = "Square",
+    shape = "Box",
 }
 
 -- Pre-fetched class colors for Preview/Dummy frames

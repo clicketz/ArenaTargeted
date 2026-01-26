@@ -19,7 +19,7 @@ function ns.UpdateContainerLayout(container)
 
     -- Get the current Shape Definition
     local shapeName = db.shape or ns.defaults.shape
-    local shapeDef = ns.shapes[shapeName] or ns.shapes["Square"]
+    local shapeDef = ns.shapes[shapeName] or ns.shapes["Box"]
 
     -- Snap container anchor to global pixel grid
     container:ClearAllPoints()

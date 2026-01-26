@@ -8,8 +8,6 @@ local Settings = Settings
 local PixelUtil = PixelUtil
 
 ns.containers = {}
-ns.categoryID = nil
-ns.pixelScale = 1
 
 -- Update layout for a specific container and its indicators
 function ns.UpdateContainerLayout(container)

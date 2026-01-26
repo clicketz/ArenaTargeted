@@ -34,7 +34,7 @@ ns.shapes = {
 
         -- Square has a black border and inset color
         Setup = function(indicator, width, height, px, borderSize)
-            ns.SetupTextureState(indicator, ns.CONSTANTS.TEXTURE_WHITE, false, nil)
+            ns.SetupTextureState(indicator, ns.CONSTANTS.TEXTURE_WHITE, false)
             ns.SetupCenteredInset(indicator, width, height, px, borderSize)
         end
     },
@@ -55,7 +55,7 @@ ns.shapes = {
             return w, h
         end,
         Setup = function(indicator, width, height, px, borderSize)
-            ns.SetupTextureState(indicator, ns.CONSTANTS.TEXTURE_WHITE, false, nil)
+            ns.SetupTextureState(indicator, ns.CONSTANTS.TEXTURE_WHITE, false)
             ns.SetupCenteredInset(indicator, width, height, px, borderSize)
         end
     }

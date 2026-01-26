@@ -48,8 +48,7 @@ end
 -- @param indicator The indicator frame
 -- @param texture The texture file path
 -- @param desaturate Boolean to desaturate the texture
--- @param coords Optional texture coordinates {L, R, T, B}
-function ns.SetupTextureState(indicator, texture, desaturate, coords)
+function ns.SetupTextureState(indicator, texture, desaturate)
     -- remove all potential masks from previous states
     local function ClearMask(mask)
         if mask then
@@ -62,27 +61,17 @@ function ns.SetupTextureState(indicator, texture, desaturate, coords)
     ClearMask(indicator.maskBg)
     ClearMask(indicator.maskFg)
 
-    indicator.border:SetAlpha(1)
-    indicator.inner:SetAlpha(1)
-
     indicator.border:SetTexture(texture)
     indicator.border:SetDesaturated(desaturate)
     indicator.border:SetBlendMode("BLEND")
     indicator.border:SetVertexColor(0, 0, 0, 1) -- Always black border
+    indicator.border:SetTexCoord(0, 1, 0, 1)
 
     indicator.inner:SetTexture(texture)
     indicator.inner:SetDesaturated(desaturate)
     indicator.inner:SetBlendMode("BLEND")
     indicator.inner:SetVertexColor(1, 1, 1, 1) -- Always white inner (tinted later)
-
-    if not coords then
-        indicator.border:SetTexCoord(0, 1, 0, 1)
-        indicator.inner:SetTexCoord(0, 1, 0, 1)
-    else
-        local L, R, T, B = coords[1], coords[2], coords[3], coords[4]
-        indicator.border:SetTexCoord(L, R, T, B)
-        indicator.inner:SetTexCoord(L, R, T, B)
-    end
+    indicator.inner:SetTexCoord(0, 1, 0, 1)
 end
 
 -- shifted mask with dual layers (border + inner)
@@ -96,9 +85,6 @@ end
 function ns.SetupShiftedMask(indicator, maskTexture, iconIndex, width, height, px, borderSize)
     if not indicator.maskBg then indicator.maskBg = indicator:CreateMaskTexture() end
     if not indicator.maskFg then indicator.maskFg = indicator:CreateMaskTexture() end
-
-    indicator.border:SetAlpha(1)
-    indicator.inner:SetAlpha(1)
 
     -- detach masks to allow updates
     indicator.border:RemoveMaskTexture(indicator.maskBg)
@@ -121,8 +107,7 @@ function ns.SetupShiftedMask(indicator, maskTexture, iconIndex, width, height, p
     indicator.maskBg:SetPoint("TOPLEFT", indicator, "TOPLEFT", bgOffX, bgOffY)
 
     -- fg mask (inner)
-    local bSize = borderSize or 1
-    local inset = bSize * px
+    local inset = borderSize * px
     local fgW = width - (2 * inset)
     local fgH = height - (2 * inset)
     if fgW < 0 then fgW = 0 end
@@ -164,11 +149,8 @@ end
 -- @param px The pixel scale (returned from GetPixelScale).
 -- @param borderSize The border size in physical pixels.
 function ns.SetupCenteredInset(indicator, width, height, px, borderSize)
-    -- Default to 1 if nil
-    local bSize = borderSize or 1
-
-    -- Calculate the inset thickness (Physical Pixels * Border Size)
-    local inset = bSize * px
+    -- Calculate the inset thickness (Border Size * Physical Pixels)
+    local inset = borderSize * px
 
     -- Inner size is Total - (Inset on Left + Inset on Right)
     local innerW = width - (2 * inset)

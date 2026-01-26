@@ -86,9 +86,7 @@ function ns.SetupShiftedMask(indicator, maskTexture, iconIndex, width, height, p
     if not indicator.maskBg then indicator.maskBg = indicator:CreateMaskTexture() end
     if not indicator.maskFg then indicator.maskFg = indicator:CreateMaskTexture() end
 
-    -- detach masks to allow updates
-    indicator.border:RemoveMaskTexture(indicator.maskBg)
-    indicator.inner:RemoveMaskTexture(indicator.maskFg)
+    -- Ensure masks are active/visible (in case they were hidden by SetupTextureState)
     indicator.maskBg:Show()
     indicator.maskFg:Show()
 
@@ -136,7 +134,7 @@ function ns.SetupShiftedMask(indicator, maskTexture, iconIndex, width, height, p
     indicator.inner:SetBlendMode("BLEND")
     indicator.inner:SetVertexColor(1, 1, 1, 1)
 
-    -- apply our masks
+    -- apply our masks (safe to call even if already added)
     indicator.border:AddMaskTexture(indicator.maskBg)
     indicator.inner:AddMaskTexture(indicator.maskFg)
 end

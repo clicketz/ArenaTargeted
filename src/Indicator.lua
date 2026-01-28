@@ -32,7 +32,7 @@ function ns.IndicatorMixin:SetColor(r, g, b)
 end
 
 -- controls visibility based on targeting status
--- NOTE: isMatch is a secret value returned from UnitisUnit
+-- NOTE: isMatch is a secret value returned from UnitIsUnit
 function ns.IndicatorMixin:SetVisible(isMatch)
     -- always show the frame, but let the secure api handle the alpha
     -- to bypass secret issues

@@ -35,7 +35,7 @@ ns.defaults = {
     shape = "Box",
 }
 
--- pre-fetched colors for preview frames
+-- pre-fetched colors for preview frame
 ns.PREVIEW_COLORS = {
     [1] = C_ClassColor.GetClassColor("MAGE"),
     [2] = C_ClassColor.GetClassColor("ROGUE"),

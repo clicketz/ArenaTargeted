@@ -3,7 +3,8 @@ local Settings = Settings
 local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
 
--- Widget Constructor: Checkbox
+--[[ widget constructors ]]
+
 local function CreateCheckbox(label, key, parent, anchorTo, refreshFuncs)
     local cb = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
     cb:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -10)
@@ -20,12 +21,11 @@ local function CreateCheckbox(label, key, parent, anchorTo, refreshFuncs)
 
     cb:SetScript("OnClick", function(self)
         ns.db[key] = self:GetChecked()
-        ns.UpdateAll()
+        ns.Container.UpdateAll()
     end)
     return cb
 end
 
--- Widget Constructor: Slider
 local function CreateSlider(label, key, parent, anchorTo, minVal, maxVal, step, refreshFuncs)
     local slider = CreateFrame("Slider", nil, parent, "OptionsSliderTemplate")
     slider:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -30)
@@ -51,12 +51,11 @@ local function CreateSlider(label, key, parent, anchorTo, minVal, maxVal, step, 
         value = math.floor(value / step + 0.5) * step
         ns.db[key] = value
         if self.Text then self.Text:SetText(label .. ": " .. tostring(value)) end
-        ns.UpdateAll()
+        ns.Container.UpdateAll()
     end)
     return slider
 end
 
--- Widget Constructor: Dropdown
 local function CreateDropdown(label, key, parent, anchorTo, options, refreshFuncs)
     local fontString = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     fontString:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -20)
@@ -76,7 +75,7 @@ local function CreateDropdown(label, key, parent, anchorTo, options, refreshFunc
                 ns.db[key] = opt
                 UIDropDownMenu_SetSelectedValue(dd, opt)
                 UIDropDownMenu_SetText(dd, opt)
-                ns.UpdateAll()
+                ns.Container.UpdateAll()
             end
             info.checked = (ns.db[key] == opt)
             UIDropDownMenu_AddButton(info, level)
@@ -106,23 +105,16 @@ local function CreateButton(label, parent, anchorTo, width, onClick)
     return btn
 end
 
--- ---------------------------------------------------------
--- Preview Frame Configuration
--- ---------------------------------------------------------
+--[[ preview frame configuration ]]
 
 local function UpdatePreviewState(f)
-    -- Default dimensions fallback
     local width, height = 120, 60
     local scale = 1
 
-    -- Attempt to fetch real dimensions from the live UI
     local realFrame = _G["CompactPartyFrameMember1"]
 
     if realFrame then
         width, height = realFrame:GetSize()
-
-        -- Calculate scale relative to parent
-        -- This logic must run in OnShow to get the correct parent effective scale
         local parent = f:GetParent()
         local parentScale = parent and parent:GetEffectiveScale() or 1
         if parentScale > 0 then
@@ -148,8 +140,6 @@ end
 local function CreatePreviewFrame(parent)
     local f = CreateFrame("Frame", "ArenaTargetedPreview", parent)
     f:SetPoint("TOPLEFT", parent, "TOPLEFT", 400, -250)
-
-    -- Initial placeholder size
     f:SetSize(120, 60)
 
     local border = f:CreateTexture(nil, "BACKGROUND")
@@ -169,25 +159,20 @@ local function CreatePreviewFrame(parent)
     text:SetText("Preview")
     text:SetTextColor(1, 1, 1, 1)
 
-    -- Initialize container and flag as preview
-    f.ATPContainer = ns.CreateContainer(f)
+    f.ATPContainer = ns.Container.Create(f)
     f.ATPContainer.isPreview = true
 
-    -- We hook OnShow because parent scales are often invalid at creation time
     f:SetScript("OnShow", function(self)
         UpdatePreviewState(self)
-        ns.UpdateAll()
+        ns.Container.UpdateAll()
     end)
 
-    -- Also run once immediately to set initial state
     UpdatePreviewState(f)
     f:Show()
-    ns.UpdateAll()
+    ns.Container.UpdateAll()
 end
 
--- ---------------------------------------------------------
--- Main Options Setup
--- ---------------------------------------------------------
+--[[ main options setup ]]
 
 function ns.SetupOptions()
     local panel = CreateFrame("Frame")
@@ -210,7 +195,6 @@ function ns.SetupOptions()
         for _, func in ipairs(refreshFuncs) do func() end
     end
 
-    -- Slash Command Help Panel
     local helpPanel = CreateFrame("Frame", nil, panel)
     helpPanel:SetSize(200, 100)
     helpPanel:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -20, -20)
@@ -235,48 +219,33 @@ function ns.SetupOptions()
     lastHelp = AddCommand("/arenatargeted", "Alias for /at", lastHelp)
     lastHelp = AddCommand("/at reset", "Reset all settings", lastHelp)
 
-    -- Options Panel Layout
     local lastWidget = author
-
     lastWidget = CreateCheckbox("Show Arena ID#", "showIndex", panel, lastWidget, refreshFuncs)
-
-    -- Indicator Size
     lastWidget = CreateSlider("Size", "size", panel, lastWidget, 5, 30, 1, refreshFuncs)
-
-    -- Border Thickness
     lastWidget = CreateSlider("Border Thickness", "borderSize", panel, lastWidget, 1, 5, 1, refreshFuncs)
-
-    -- Spacing
     lastWidget = CreateSlider("Spacing", "spacing", panel, lastWidget, 0, 10, 1, refreshFuncs)
 
-    -- Indicator Shape
     local shapes = {}
     for name, _ in pairs(ns.shapes) do
         table.insert(shapes, name)
     end
     table.sort(shapes)
-
     lastWidget = CreateDropdown("Shape:", "shape", panel, lastWidget, shapes, refreshFuncs)
 
-    -- Anchors
     local anchors = { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT" }
     lastWidget = CreateDropdown("Anchor:", "anchor", panel, lastWidget, anchors, refreshFuncs)
     lastWidget = CreateDropdown("Relative To:", "relativePoint", panel, lastWidget, anchors, refreshFuncs)
 
-    -- Grow Direction
     local directions = { "RIGHT", "LEFT", "UP", "DOWN" }
     lastWidget = CreateDropdown("Grow Direction:", "growDirection", panel, lastWidget, directions, refreshFuncs)
 
-    -- X/Y Offsets
     lastWidget = CreateSlider("X Offset", "x", panel, lastWidget, -50, 50, 1, refreshFuncs)
     lastWidget = CreateSlider("Y Offset", "y", panel, lastWidget, -50, 50, 1, refreshFuncs)
 
-    -- Reset Button
     lastWidget = CreateButton("Reset to Defaults", panel, lastWidget, 140, function()
         ns.ResetSettings()
     end)
 
-    -- Embed Preview Frame
     CreatePreviewFrame(panel)
 
     if Settings and Settings.RegisterCanvasLayoutCategory then

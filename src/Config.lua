@@ -1,10 +1,7 @@
 local _, ns = ...
 local C_ClassColor = C_ClassColor
 
--- ---------------------------------------------------------
--- Constants & Config
--- ---------------------------------------------------------
-
+-- constants
 ns.CONSTANTS = {
     MAX_ARENA_ENEMIES = 5,
     TEXTURE_WHITE = "Interface\\BUTTONS\\WHITE8X8",
@@ -23,6 +20,7 @@ ns.CONSTANTS = {
     }
 }
 
+-- db defaults
 ns.defaults = {
     anchor = "BOTTOMLEFT",
     relativePoint = "BOTTOMRIGHT",
@@ -37,7 +35,7 @@ ns.defaults = {
     shape = "Box",
 }
 
--- Pre-fetched class colors for Preview/Dummy frames
+-- pre-fetched colors for preview frames
 ns.PREVIEW_COLORS = {
     [1] = C_ClassColor.GetClassColor("MAGE"),
     [2] = C_ClassColor.GetClassColor("ROGUE"),

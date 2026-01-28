@@ -8,8 +8,19 @@
 ## IconTexture: Interface\Icons\ability_hunter_snipershot
 ## SavedVariables: ArenaTargetedDB
 
-helpers.lua
-config.lua
-shapes.lua
-core.lua
-options.lua
+# config/utils
+src\Config.lua
+src\Utils.lua
+
+# objects
+src\Indicator.lua
+src\Container.lua
+
+# data
+src\Shapes.lua
+
+# controller
+src\Core.lua
+
+# gui
+src\Options.lua

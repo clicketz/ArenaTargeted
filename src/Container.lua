@@ -114,7 +114,7 @@ function ns.ContainerMixin:UpdateLayout()
             if c and i <= 3 then
                 indicator:Show()
                 indicator:SetColor(c.r, c.g, c.b)
-                indicator:SetMatch(true)
+                indicator:SetVisible(true)
             else
                 indicator:Hide()
             end
@@ -137,7 +137,7 @@ function ns.ContainerMixin:UpdateEnemyState(arenaIndex, r, g, b, isMatch)
     if indicator then
         if r then
             indicator:SetColor(r, g, b)
-            indicator:SetMatch(isMatch)
+            indicator:SetVisible(isMatch)
         else
             indicator:Hide()
         end

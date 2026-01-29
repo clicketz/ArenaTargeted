@@ -54,8 +54,8 @@ function ns.Init()
     for i = 1, 5 do
         local frameName = "CompactPartyFrameMember" .. i
         local parentFrame = _G[frameName]
-        if parentFrame and not parentFrame.ATPContainer then
-            parentFrame.ATPContainer = ns.Container.Create(parentFrame)
+        if parentFrame and not parentFrame.ATContainer then
+            parentFrame.ATContainer = ns.Container.Create(parentFrame)
         end
     end
 end

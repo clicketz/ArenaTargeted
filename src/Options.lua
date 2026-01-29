@@ -137,8 +137,8 @@ local function UpdatePreviewState(f)
     end
 
     -- force layout update on the preview container
-    if f.ATPContainer then
-        f.ATPContainer:UpdateLayout()
+    if f.ATContainer then
+        f.ATContainer:UpdateLayout()
     end
 end
 
@@ -164,8 +164,8 @@ local function CreatePreviewFrame(parent)
     text:SetText("Preview")
     text:SetTextColor(1, 1, 1, 1)
 
-    f.ATPContainer = ns.Container.Create(f)
-    f.ATPContainer.isPreview = true
+    f.ATContainer = ns.Container.Create(f)
+    f.ATContainer.isPreview = true
 
     -- this ensures the preview frame is accurately sized
     parent:HookScript("OnSizeChanged", function()

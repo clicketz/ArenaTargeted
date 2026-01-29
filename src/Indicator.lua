@@ -41,11 +41,17 @@ function ns.IndicatorMixin:SetVisible(isMatch)
 end
 
 function ns.IndicatorMixin:ResetTextureState()
-    if self.maskBg then self.maskBg:Hide() end
-    if self.maskFg then self.maskFg:Hide() end
+    -- only try to remove masks if they actually exist
+    -- (non-icon shapes won't have masks)
+    if self.maskBg then
+        self.maskBg:Hide()
+        self.border:RemoveMaskTexture(self.maskBg)
+    end
 
-    self.border:RemoveMaskTexture(self.maskBg)
-    self.inner:RemoveMaskTexture(self.maskFg)
+    if self.maskFg then
+        self.maskFg:Hide()
+        self.inner:RemoveMaskTexture(self.maskFg)
+    end
 
     self.border:SetTexture(ns.CONSTANTS.TEXTURE_WHITE)
     self.border:SetTexCoord(0, 1, 0, 1)

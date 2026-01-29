@@ -135,6 +135,11 @@ local function UpdatePreviewState(f)
         f.bg:SetPoint("CENTER", f, "CENTER", 0, 0)
         f.bg:SetSize(w - 2 * px, h - 2 * px)
     end
+
+    -- force layout update on the preview container
+    if f.ATPContainer then
+        f.ATPContainer:UpdateLayout()
+    end
 end
 
 local function CreatePreviewFrame(parent)
@@ -162,14 +167,19 @@ local function CreatePreviewFrame(parent)
     f.ATPContainer = ns.Container.Create(f)
     f.ATPContainer.isPreview = true
 
-    f:SetScript("OnShow", function(self)
-        UpdatePreviewState(self)
-        ns.Container.UpdateAll()
+    -- this ensures the preview frame is accurately sized
+    parent:HookScript("OnSizeChanged", function()
+        UpdatePreviewState(f)
     end)
 
+    -- this handles tab switching where size might not change but visibility does
+    parent:HookScript("OnShow", function()
+        UpdatePreviewState(f)
+    end)
+
+    -- initial state
     UpdatePreviewState(f)
     f:Show()
-    ns.Container.UpdateAll()
 end
 
 --[[ main options setup ]]
@@ -253,6 +263,7 @@ function ns.SetupOptions()
         Settings.RegisterAddOnCategory(category)
         ns.categoryID = category:GetID()
     else
+        -- legacy fallback
         InterfaceOptions_AddCategory(panel)
     end
 end

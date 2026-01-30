@@ -50,6 +50,18 @@ end
 
 --[[ initialization & settings ]]
 
+-- ensures ns.db has every key from defaults, so other files don't need to check
+function ns.ValidateDB()
+    if not ArenaTargetedDB then ArenaTargetedDB = {} end
+    ns.db = ArenaTargetedDB
+
+    for k, v in pairs(ns.defaults) do
+        if ns.db[k] == nil then
+            ns.db[k] = v
+        end
+    end
+end
+
 function ns.Init()
     for i = 1, 5 do
         local frameName = "CompactPartyFrameMember" .. i
@@ -62,9 +74,7 @@ end
 
 function ns.ResetSettings()
     wipe(ns.db)
-    for k, v in pairs(ns.defaults) do
-        ns.db[k] = v
-    end
+    ns.ValidateDB()
 
     ns.Container.UpdateAll()
 
@@ -89,13 +99,7 @@ local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == addonName then
-        if not ArenaTargetedDB then ArenaTargetedDB = {} end
-        ns.db = ArenaTargetedDB
-
-        for k, v in pairs(ns.defaults) do
-            if ns.db[k] == nil then ns.db[k] = v end
-        end
-
+        ns.ValidateDB()
         ns.SetupSystemEvents()
         ns.SetupCombatEvents()
         ns.Init()

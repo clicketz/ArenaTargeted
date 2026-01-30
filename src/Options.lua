@@ -85,7 +85,7 @@ local function CreateDropdown(label, key, parent, anchorTo, options, refreshFunc
     UIDropDownMenu_Initialize(dd, Init)
 
     local function Refresh()
-        local val = ns.db[key] or ns.defaults[key]
+        local val = ns.db[key]
         UIDropDownMenu_SetSelectedValue(dd, val)
         UIDropDownMenu_SetText(dd, val)
     end

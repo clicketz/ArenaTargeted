@@ -65,22 +65,16 @@ function ns.ContainerMixin:Init()
 end
 
 function ns.ContainerMixin:UpdateLayout()
-    local db = ns.db or ns.defaults
+    local db = ns.db
     local px = ns.GetPixelScale(self)
     local parent = self:GetParent()
 
-    local shapeName = db.shape or ns.defaults.shape
-    local shapeDef = ns.shapes[shapeName] or ns.shapes["Box"]
+    local shapeDef = ns.shapes[db.shape] or ns.shapes["Box"]
 
     self:ClearAllPoints()
-    local anchor = db.anchor or ns.defaults.anchor
-    local relPoint = db.relativePoint or ns.defaults.relativePoint
-    local x = db.x or ns.defaults.x
-    local y = db.y or ns.defaults.y
-    PixelUtil.SetPoint(self, anchor, parent, relPoint, x, y)
+    PixelUtil.SetPoint(self, db.anchor, parent, db.relativePoint, db.x, db.y)
 
-    local grow = db.growDirection or ns.defaults.growDirection
-    local spacing = ns.SnapToScale(db.spacing or ns.defaults.spacing, px)
+    local spacing = ns.SnapToScale(db.spacing, px)
 
     for i, indicator in ipairs(self.indicators) do
         indicator:Setup(shapeDef, db, parent, px)
@@ -88,16 +82,16 @@ function ns.ContainerMixin:UpdateLayout()
 
         indicator:ClearAllPoints()
         if i == 1 then
-            indicator:SetPoint(anchor, self, anchor, 0, 0)
+            indicator:SetPoint(db.anchor, self, db.anchor, 0, 0)
         else
             local prev = self.indicators[i - 1]
-            if grow == "RIGHT" then
+            if db.growDirection == "RIGHT" then
                 indicator:SetPoint("LEFT", prev, "RIGHT", spacing, 0)
-            elseif grow == "LEFT" then
+            elseif db.growDirection == "LEFT" then
                 indicator:SetPoint("RIGHT", prev, "LEFT", -spacing, 0)
-            elseif grow == "UP" then
+            elseif db.growDirection == "UP" then
                 indicator:SetPoint("BOTTOM", prev, "TOP", 0, spacing)
-            elseif grow == "DOWN" then
+            elseif db.growDirection == "DOWN" then
                 indicator:SetPoint("TOP", prev, "BOTTOM", 0, -spacing)
             end
         end

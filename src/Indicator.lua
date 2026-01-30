@@ -51,7 +51,6 @@ end
 function ns.IndicatorMixin:UpdateIndexDisplay(show, fontSize)
     if show then
         self.text:Show()
-        -- use the stored state, not a passed argument
         self.text:SetText(self.index)
         local fName, _, fFlags = self.text:GetFont()
         self.text:SetFont(fName, fontSize, fFlags)
@@ -136,17 +135,17 @@ function ns.IndicatorMixin:Setup(shapeDef, db, parent, px)
 
     if shapeDef.type == "line" then
         width = ns.SnapToScale(parent:GetWidth(), px)
-        local rawSize = db.size or ns.defaults.size
+        local rawSize = db.size
         local rawH = math.max(1, rawSize * shapeDef.heightFactor)
         height = ns.SnapToScale(rawH, px)
     else
-        local s = ns.SnapToScale(db.size or ns.defaults.size, px)
+        local s = ns.SnapToScale(db.size, px)
         width, height = s, s
     end
 
     self:SetSize(width, height)
 
-    local borderSize = db.borderSize or ns.defaults.borderSize
+    local borderSize = db.borderSize
 
     if shapeDef.type == "icon" then
         self:ApplyIconShape(shapeDef.index, width, height, px, borderSize)

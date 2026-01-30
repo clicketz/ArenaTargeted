@@ -6,6 +6,8 @@ ns.CONSTANTS = {
     MAX_ARENA_ENEMIES = 5,
     TEXTURE_WHITE = "Interface\\BUTTONS\\WHITE8X8",
     TEXTURE_RAID_ICONS = "Interface\\TargetingFrame\\UI-RaidTargetingIcons",
+    -- These indices correspond to the position of the icon located in UI-RaidTargetingIcons
+    -- looking at it as a 4x4 grid from top-left to bottom-right
     RAID_ICON_INDICES = {
         ["Star"]     = 1,
         ["Circle"]   = 2,

@@ -48,12 +48,12 @@ function ns.IndicatorMixin:SetVisible(isMatch)
 end
 
 -- toggles visibility of index text and updates font
-function ns.IndicatorMixin:UpdateIndexDisplay(show, fontSize)
-    if show then
+function ns.IndicatorMixin:UpdateIndexDisplay()
+    if ns.db.showIndex then
         self.text:Show()
         self.text:SetText(self.index)
         local fName, _, fFlags = self.text:GetFont()
-        self.text:SetFont(fName, fontSize, fFlags)
+        self.text:SetFont(fName, ns.db.fontSize, fFlags)
     else
         self.text:Hide()
     end
@@ -130,8 +130,9 @@ function ns.IndicatorMixin:ApplyIconShape(index, width, height, px, borderSize)
     self.inner:AddMaskTexture(self.maskFg)
 end
 
-function ns.IndicatorMixin:Setup(shapeDef, db, parent, px)
+function ns.IndicatorMixin:Setup(shapeDef, parent, px)
     local width, height
+    local db = ns.db
 
     if shapeDef.type == "line" then
         width = ns.SnapToScale(parent:GetWidth(), px)

@@ -77,8 +77,8 @@ function ns.ContainerMixin:UpdateLayout()
     local spacing = ns.SnapToScale(db.spacing, px)
 
     for i, indicator in ipairs(self.indicators) do
-        indicator:Setup(shapeDef, db, parent, px)
-        indicator:UpdateIndexDisplay(db.showIndex, db.fontSize)
+        indicator:Setup(shapeDef, parent, px)
+        indicator:UpdateIndexDisplay()
 
         indicator:ClearAllPoints()
         if i == 1 then

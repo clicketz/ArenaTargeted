@@ -11,9 +11,7 @@ local function CreateCheckbox(label, key, parent, anchorTo, refreshFuncs)
     cb.Text:SetText(label)
 
     local function Refresh()
-        local val = ns.db[key]
-        if val == nil then val = ns.defaults[key] end
-        cb:SetChecked(val)
+        cb:SetChecked(ns.db[key])
     end
 
     Refresh()
@@ -39,7 +37,6 @@ local function CreateSlider(label, key, parent, anchorTo, minVal, maxVal, step, 
 
     local function Refresh()
         local val = ns.db[key]
-        if val == nil then val = ns.defaults[key] or minVal end
         slider:SetValue(val)
         if slider.Text then slider.Text:SetText(label .. ": " .. tostring(val)) end
     end

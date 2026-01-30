@@ -7,6 +7,9 @@ local floor = math.floor
 ns.IndicatorMixin = {}
 
 function ns.IndicatorMixin:Init()
+    -- state
+    self.index = 0
+
     -- border
     self.border = self:CreateTexture(nil, "BACKGROUND")
     self.border:SetBlendMode("BLEND")
@@ -27,6 +30,10 @@ function ns.IndicatorMixin:Init()
     self:Hide()
 end
 
+function ns.IndicatorMixin:SetIndex(index)
+    self.index = index
+end
+
 function ns.IndicatorMixin:SetColor(r, g, b)
     self.inner:SetVertexColor(r, g, b, 1)
 end
@@ -38,6 +45,19 @@ function ns.IndicatorMixin:SetVisible(isMatch)
     -- to bypass secret issues
     self:Show()
     self:SetAlphaFromBoolean(isMatch)
+end
+
+-- toggles visibility of index text and updates font
+function ns.IndicatorMixin:UpdateIndexDisplay(show, fontSize)
+    if show then
+        self.text:Show()
+        -- use the stored state, not a passed argument
+        self.text:SetText(self.index)
+        local fName, _, fFlags = self.text:GetFont()
+        self.text:SetFont(fName, fontSize, fFlags)
+    else
+        self.text:Hide()
+    end
 end
 
 function ns.IndicatorMixin:ResetTextureState()

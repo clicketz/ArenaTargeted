@@ -48,6 +48,7 @@ function ns.ContainerMixin:Init()
 
         Mixin(indicator, ns.IndicatorMixin)
         indicator:Init()
+        indicator:SetIndex(i)
 
         self.indicators[i] = indicator
     end
@@ -83,15 +84,7 @@ function ns.ContainerMixin:UpdateLayout()
 
     for i, indicator in ipairs(self.indicators) do
         indicator:Setup(shapeDef, db, parent, px)
-
-        if db.showIndex then
-            indicator.text:Show()
-            indicator.text:SetText(i)
-            local fName, _, fFlags = indicator.text:GetFont()
-            indicator.text:SetFont(fName, db.fontSize or ns.defaults.fontSize, fFlags)
-        else
-            indicator.text:Hide()
-        end
+        indicator:UpdateIndexDisplay(db.showIndex, db.fontSize)
 
         indicator:ClearAllPoints()
         if i == 1 then

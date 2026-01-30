@@ -145,11 +145,9 @@ function ns.IndicatorMixin:Setup(shapeDef, db, parent, px)
 
     self:SetSize(width, height)
 
-    local borderSize = db.borderSize
-
     if shapeDef.type == "icon" then
-        self:ApplyIconShape(shapeDef.index, width, height, px, borderSize)
+        self:ApplyIconShape(shapeDef.index, width, height, px, db.borderSize)
     else
-        self:ApplyBasicShape(width, height, px, borderSize)
+        self:ApplyBasicShape(width, height, px, db.borderSize)
     end
 end

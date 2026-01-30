@@ -47,7 +47,7 @@ function ns.IndicatorMixin:SetVisible(isMatch)
     self:SetAlphaFromBoolean(isMatch)
 end
 
--- toggles visibility of index text and updates font
+-- updates visibility of index text and updates font
 function ns.IndicatorMixin:UpdateIndexDisplay()
     if ns.db.showIndex then
         self.text:Show()

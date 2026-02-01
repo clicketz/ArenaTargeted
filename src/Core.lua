@@ -10,7 +10,7 @@ local Settings = Settings
 
 function ns.SetupCombatEvents()
     local combatListener = CreateFrame("FRAME", nil, UIParent)
-    combatListener:RegisterUnitEvent("UNIT_TARGET", "arena1", "arena2", "arena3", "arena4", "arena5")
+    combatListener:RegisterUnitEvent("UNIT_TARGET", "arena1", "arena2", "arena3")
     combatListener:RegisterEvent("ARENA_OPPONENT_UPDATE")
     combatListener:RegisterEvent("PLAYER_ENTERING_WORLD")
 

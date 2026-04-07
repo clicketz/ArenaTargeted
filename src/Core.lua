@@ -48,20 +48,6 @@ function ns.SetupSystemEvents()
     end)
 end
 
---[[ initialization & settings ]]
-
--- ensures ns.db has every key from defaults, so other files don't need to check
-function ns.ValidateDB()
-    if not ArenaTargetedDB then ArenaTargetedDB = {} end
-    ns.db = ArenaTargetedDB
-
-    for k, v in pairs(ns.defaults) do
-        if ns.db[k] == nil then
-            ns.db[k] = v
-        end
-    end
-end
-
 function ns.Init()
     for i = 1, 5 do
         local frameName = "CompactPartyFrameMember" .. i
@@ -74,7 +60,9 @@ end
 
 function ns.ResetSettings()
     wipe(ns.db)
-    ns.ValidateDB()
+    for k, v in pairs(ns.defaults) do
+        ns.db[k] = v
+    end
 
     ns.Container.UpdateAll()
 
@@ -95,20 +83,22 @@ function ns.SlashCommandHandler(msg)
     end
 end
 
-local loader = CreateFrame("Frame")
-loader:RegisterEvent("ADDON_LOADED")
-loader:SetScript("OnEvent", function(self, event, arg1)
-    if event == "ADDON_LOADED" and arg1 == addonName then
-        ns.ValidateDB()
-        ns.SetupSystemEvents()
-        ns.SetupCombatEvents()
-        ns.Init()
-        ns.SetupOptions()
+local function OnPlayerLogin()
+    if not ArenaTargetedDB then ArenaTargetedDB = {} end
+    ns.db = ArenaTargetedDB
 
-        SLASH_ARENATARGETED1 = "/at"
-        SLASH_ARENATARGETED2 = "/arenatargeted"
-        SlashCmdList["ARENATARGETED"] = function(msg) ns.SlashCommandHandler(msg) end
-
-        self:UnregisterEvent("ADDON_LOADED")
+    for k, v in pairs(ns.defaults) do
+        if ns.db[k] == nil then ns.db[k] = v end
     end
-end)
+
+    ns.SetupSystemEvents()
+    ns.SetupCombatEvents()
+    ns.Init()
+    ns.SetupOptions()
+
+    SLASH_ARENATARGETED1 = "/at"
+    SLASH_ARENATARGETED2 = "/arenatargeted"
+    SlashCmdList["ARENATARGETED"] = function(msg) ns.SlashCommandHandler(msg) end
+end
+
+EventRegistry:RegisterFrameEventAndCallback("PLAYER_LOGIN", OnPlayerLogin)

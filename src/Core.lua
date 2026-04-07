@@ -1,16 +1,25 @@
 local addonName, ns = ...
 
-local string_match = string.match
-local tonumber = tonumber
-local ipairs = ipairs
-local pairs = pairs
-local Settings = Settings
+local UnitExists = UnitExists
+local UnitClass = UnitClass
+local UnitHonor = UnitHonor
+local UnitIsUnit = UnitIsUnit
 
---[[ events ]]
+local ARENA_INDICES = {
+    ["arena1"] = 1, ["arena2"] = 2, ["arena3"] = 3, ["arena4"] = 4, ["arena5"] = 5
+}
+
+local ARENA_TARGETS = {
+    ["arena1"] = "arena1target",
+    ["arena2"] = "arena2target",
+    ["arena3"] = "arena3target",
+    ["arena4"] = "arena4target",
+    ["arena5"] = "arena5target"
+}
 
 function ns.SetupCombatEvents()
     local combatListener = CreateFrame("FRAME", nil, UIParent)
-    combatListener:RegisterUnitEvent("UNIT_TARGET", "arena1", "arena2", "arena3")
+    combatListener:RegisterUnitEvent("UNIT_TARGET", "arena1", "arena2", "arena3", "arena4", "arena5")
     combatListener:RegisterEvent("ARENA_OPPONENT_UPDATE")
     combatListener:RegisterEvent("PLAYER_ENTERING_WORLD")
 
@@ -20,10 +29,10 @@ function ns.SetupCombatEvents()
             return
         end
 
-        local arenaIndex = tonumber(string_match(unit or "", "arena(%d+)"))
+        local arenaIndex = ARENA_INDICES[unit]
         if not arenaIndex then return end
 
-        local unitTarget = unit .. "target"
+        local unitTarget = ARENA_TARGETS[unit]
         local r, g, b = ns.GetUnitColor(unit)
 
         local targetClass, targetHonor

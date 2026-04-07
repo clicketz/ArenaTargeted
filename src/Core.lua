@@ -26,11 +26,39 @@ function ns.SetupCombatEvents()
         local unitTarget = unit .. "target"
         local r, g, b = ns.GetUnitColor(unit)
 
-        for _, container in ipairs(ns.Container.instances) do
+        local targetClass, targetHonor
+        if UnitExists(unitTarget) then
+            local _, classFilename = UnitClass(unitTarget)
+            targetClass = classFilename
+            targetHonor = UnitHonor(unitTarget)
+        end
+
+        local instances = ns.Container.instances
+        local heuristicMatchFound = false
+
+        for i = 1, #instances do
+            local container = instances[i]
             local parent = container:GetParent()
 
             if r and parent.unit then
-                local isMatch = UnitIsUnit(unitTarget, parent.unit)
+                local isMatch = false
+
+                if UnitIsUnit("player", parent.unit) then
+                    isMatch = UnitIsUnit(unitTarget, "player")
+                else
+                    if not heuristicMatchFound and targetClass then
+                        local _, frameClass = UnitClass(parent.unit)
+
+                        if frameClass == targetClass then
+                            local frameHonor = UnitHonor(parent.unit)
+                            if frameHonor == targetHonor then
+                                isMatch = true
+                                heuristicMatchFound = true
+                            end
+                        end
+                    end
+                end
+
                 container:UpdateEnemyState(arenaIndex, r, g, b, isMatch)
             else
                 container:UpdateEnemyState(arenaIndex, nil)

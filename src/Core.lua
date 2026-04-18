@@ -28,7 +28,20 @@ local PARTY_TARGETS = {
 }
 
 local function GetFrameUnit(frame, frameType)
-    return frame.unit or frame:GetAttribute("unit") or (frameType .. frame:GetName():match("%d+"))
+    if frame.unit then return frame.unit end
+
+    local attr = frame:GetAttribute("unit")
+    if attr then return attr end
+
+    local name = frame:GetName()
+    if name then
+        local id = name:match("%d+")
+        if id then
+            return frameType .. id
+        end
+    end
+
+    return nil
 end
 
 local function OnUnitTargetUpdate(unit)
@@ -63,7 +76,7 @@ local function OnUnitTargetUpdate(unit)
     for i = 1, #instances do
         local container = instances[i]
 
-        if container.frameType == sourceFrameType then
+        if container.frameType == sourceFrameType and not container.isPreview then
             if skipUpdate then
                 container:UpdateEnemyState(sourceIndex, nil)
             else

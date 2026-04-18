@@ -147,15 +147,20 @@ function ns.TryInjectFrames()
         end
     end
 
+    if C_AddOns.IsAddOnLoaded("sArena_Reloaded") then
+        for i = 1, 5 do
+            local sArenaFrame = _G["sArenaEnemyFrame" .. i]
+            if sArenaFrame and not sArenaFrame.ATContainer then
+                sArenaFrame.ATContainer = ns.Container.Create(sArenaFrame, "arena")
+            end
+        end
+        return
+    end
+
     for i = 1, 5 do
         local arenaFrame = _G["CompactArenaFrameMember" .. i]
         if arenaFrame and not arenaFrame.ATContainer then
             arenaFrame.ATContainer = ns.Container.Create(arenaFrame, "arena")
-        end
-
-        local sArenaFrame = _G["sArenaEnemyFrame" .. i]
-        if sArenaFrame and not sArenaFrame.ATContainer then
-            sArenaFrame.ATContainer = ns.Container.Create(sArenaFrame, "arena")
         end
 
         local legacyArenaFrame = _G["ArenaEnemyMatchFrame" .. i] or _G["ArenaEnemyFrame" .. i]

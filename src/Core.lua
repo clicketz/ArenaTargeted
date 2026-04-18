@@ -174,7 +174,7 @@ function ns.ResetSettings()
     ns.Container.UpdateAll()
     ns.ForceUpdateTargetStates()
 
-    if ns.RefreshOptionUI then ns.RefreshOptionUI() end
+    ns.RefreshOptionUI()
     print("|cff33ff99ArenaTargeted:|r Settings reset to default.")
 end
 

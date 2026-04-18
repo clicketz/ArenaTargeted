@@ -33,13 +33,13 @@ local function CreateSlider(label, key, dbNode, parent, anchorTo, minVal, maxVal
     slider:SetValueStep(step)
     slider:SetMinMaxValues(minVal, maxVal)
 
-    if slider.Low then slider.Low:SetText(minVal) end
-    if slider.High then slider.High:SetText(maxVal) end
+    slider.Low:SetText(minVal)
+    slider.High:SetText(maxVal)
 
     local function Refresh()
         local val = dbNode[key]
         slider:SetValue(val)
-        if slider.Text then slider.Text:SetText(label .. ": " .. tostring(val)) end
+        slider.Text:SetText(label .. ": " .. tostring(val))
     end
 
     Refresh()
@@ -48,7 +48,7 @@ local function CreateSlider(label, key, dbNode, parent, anchorTo, minVal, maxVal
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value / step + 0.5) * step
         dbNode[key] = value
-        if self.Text then self.Text:SetText(label .. ": " .. tostring(value)) end
+        self.Text:SetText(label .. ": " .. tostring(value))
         ns.Container.UpdateAll()
     end)
     return slider
@@ -97,9 +97,7 @@ end
 local function CreateButton(label, parent, anchorTo, width, onClick)
     local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     btn:SetSize(width, 25)
-    if anchorTo then
-        btn:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -20)
-    end
+    btn:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -20)
     btn:SetText(label)
     btn:SetScript("OnClick", onClick)
     return btn

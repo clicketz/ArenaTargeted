@@ -55,19 +55,15 @@ function ns.ContainerMixin:Init()
     end
 
     local parent = self:GetParent()
-    if parent.HookScript then
-        parent:HookScript("OnSizeChanged", function()
-            self:UpdateLayout()
-        end)
-    end
+    parent:HookScript("OnSizeChanged", function()
+        self:UpdateLayout()
+    end)
 
     self:Show()
     self:UpdateLayout()
 end
 
 function ns.ContainerMixin:UpdateLayout()
-    if not self.frameType then return end
-
     local db = ns.db[self.frameType]
     local px = ns.GetPixelScale(self)
     local parent = self:GetParent()
@@ -94,7 +90,6 @@ function ns.ContainerMixin:UpdateLayout()
         end
     else
         for i = 1, 5 do
-            -- show 3 indicators for preview frame
             local isSimulated = self.isPreview and (i <= 3)
             if isSimulated or UnitExists("arena" .. i) then
                 table.insert(layoutOrder, i)

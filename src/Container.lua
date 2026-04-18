@@ -110,10 +110,13 @@ function ns.ContainerMixin:UpdateLayout()
         indicator:Setup(shapeDef, parent, px)
         indicator:UpdateIndexDisplay()
 
-        if self.frameType == "arena" and i == 1 and db.highlightPlayer then
-            indicator:SetBorderColor(1, 0.95, 0.5, 1)
+        local isPlayerHighlight = (self.frameType == "arena" and i == 1 and db.highlightPlayer)
+
+        -- TODO: custom player highlight color?
+        if isPlayerHighlight then
+            indicator:SetBorderColor(1, 0.82, 0, 1) -- golden/yellow
         else
-            indicator:SetBorderColor(0, 0, 0, 1)
+            indicator:SetBorderColor(0, 0, 0, 1)    -- black
         end
 
         if not prev then

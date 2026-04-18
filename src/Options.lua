@@ -207,6 +207,7 @@ local function BuildPage(pageFrame, dbNode, frameType, refreshFuncs)
 
     if frameType == "arena" then
         anchorWidget = CreateCheckbox("Show Player Indicator", "showPlayer", dbNode, pageFrame, anchorWidget, refreshFuncs)
+        anchorWidget = CreateCheckbox("Highlight Player Border", "highlightPlayer", dbNode, pageFrame, anchorWidget, refreshFuncs)
     end
 
     anchorWidget = CreateCheckbox("Show Index#", "showIndex", dbNode, pageFrame, anchorWidget, refreshFuncs)

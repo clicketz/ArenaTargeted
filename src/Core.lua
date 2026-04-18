@@ -22,18 +22,13 @@ local PARTY_INDICES = {
     ["party2"] = 3,
 }
 local PARTY_TARGETS = {
-    ["player"] = "playertarget",
+    ["player"] = "target",
     ["party1"] = "party1target",
     ["party2"] = "party2target",
 }
 
 local function GetFrameUnit(frame, frameType)
-    if frame.unit then return frame.unit end
-
-    local attrUnit = frame:GetAttribute("unit")
-    if attrUnit then return attrUnit end
-
-    return nil
+    return frame.unit or frame:GetAttribute("unit") or (frameType .. frame:GetName():match("%d+"))
 end
 
 local function OnUnitTargetUpdate(unit)
@@ -78,8 +73,8 @@ local function OnUnitTargetUpdate(unit)
                 if r and frameUnit then
                     local isMatch = false
 
-                    if UnitIsUnit(frameUnit, unitTarget) then
-                        isMatch = true
+                    if frameUnit == "player" or unitTarget == "target" then
+                        isMatch = UnitIsUnit(frameUnit, unitTarget)
                     else
                         if not heuristicMatchFound and targetClass then
                             local _, frameClass = UnitClass(frameUnit)
@@ -183,11 +178,7 @@ function ns.SlashCommandHandler(msg)
     if command == "reset" then
         ns.ResetSettings()
     else
-        if Settings and Settings.OpenToCategory then
-            Settings.OpenToCategory(ns.categoryID)
-        else
-            InterfaceOptionsFrame_OpenToCategory(addonName)
-        end
+        Settings.OpenToCategory(ns.categoryID)
     end
 end
 

@@ -115,6 +115,12 @@ function ns.ContainerMixin:UpdateLayout()
         indicator:Setup(shapeDef, parent, px)
         indicator:UpdateIndexDisplay()
 
+        if self.frameType == "arena" and i == 1 and db.highlightPlayer then
+            indicator:SetBorderColor(1, 0.95, 0.5, 1)
+        else
+            indicator:SetBorderColor(0, 0, 0, 1)
+        end
+
         if not prev then
             indicator:SetPoint(db.anchor, self, db.anchor, 0, 0)
         else

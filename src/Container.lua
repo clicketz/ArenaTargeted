@@ -1,4 +1,3 @@
--- src/Container.lua
 local _, ns = ...
 
 local ipairs = ipairs
@@ -80,15 +79,45 @@ function ns.ContainerMixin:UpdateLayout()
 
     local spacing = ns.SnapToScale(db.spacing, px)
 
-    for i, indicator in ipairs(self.indicators) do
+    -- Determine dynamic layout order to collapse gaps from missing units or disabled indicators
+    local layoutOrder = {}
+    if self.frameType == "arena" then
+        for i = 2, 5 do
+            -- show 3 indicators for preview frame
+            local isSimulated = self.isPreview and (i <= 3)
+            if isSimulated or UnitExists("party" .. (i - 1)) then
+                table.insert(layoutOrder, i)
+            end
+        end
+        if db.showPlayer ~= false then
+            table.insert(layoutOrder, 1) -- Player anchored at the end
+        end
+    else
+        for i = 1, 5 do
+            -- show 3 indicators for preview frame
+            local isSimulated = self.isPreview and (i <= 3)
+            if isSimulated or UnitExists("arena" .. i) then
+                table.insert(layoutOrder, i)
+            end
+        end
+    end
+
+    for _, indicator in ipairs(self.indicators) do
+        indicator:Hide()
+        indicator:ClearAllPoints()
+    end
+
+    local prev = nil
+
+    for _, i in ipairs(layoutOrder) do
+        local indicator = self.indicators[i]
+
         indicator:Setup(shapeDef, parent, px)
         indicator:UpdateIndexDisplay()
 
-        indicator:ClearAllPoints()
-        if i == 1 then
+        if not prev then
             indicator:SetPoint(db.anchor, self, db.anchor, 0, 0)
         else
-            local prev = self.indicators[i - 1]
             if db.growDirection == "RIGHT" then
                 indicator:SetPoint("LEFT", prev, "RIGHT", spacing, 0)
             elseif db.growDirection == "LEFT" then
@@ -100,14 +129,14 @@ function ns.ContainerMixin:UpdateLayout()
             end
         end
 
+        prev = indicator
+
         if self.isPreview then
             local c = ns.PREVIEW_COLORS[i]
-            if c and i <= 3 then
+            if c then
                 indicator:Show()
                 indicator:SetColor(c.r, c.g, c.b)
                 indicator:SetVisible(true)
-            else
-                indicator:Hide()
             end
         end
     end

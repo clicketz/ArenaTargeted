@@ -1,4 +1,3 @@
--- src/Config.lua
 local _, ns = ...
 local C_ClassColor = C_ClassColor
 
@@ -40,6 +39,7 @@ ns.defaults = {
         shape = "Box",
     },
     arena = {
+        showPlayer = true,
         anchor = "BOTTOMLEFT",
         relativePoint = "BOTTOMRIGHT",
         x = 2,

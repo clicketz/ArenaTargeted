@@ -4,6 +4,7 @@ local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
 
 --[[ widget constructors ]]
+
 local function CreateCheckbox(label, key, dbNode, parent, anchorTo, refreshFuncs)
     local cb = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
     cb:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -10)
@@ -19,6 +20,7 @@ local function CreateCheckbox(label, key, dbNode, parent, anchorTo, refreshFuncs
     cb:SetScript("OnClick", function(self)
         dbNode[key] = self:GetChecked()
         ns.Container.UpdateAll()
+        ns.ForceUpdateTargetStates()
     end)
     return cb
 end
@@ -104,6 +106,7 @@ local function CreateButton(label, parent, anchorTo, width, onClick)
 end
 
 --[[ preview frame configuration ]]
+
 local function UpdatePreviewState(f, frameType)
     local width, height = 120, 60
     local scale = 1
@@ -117,12 +120,10 @@ local function UpdatePreviewState(f, frameType)
 
     if realFrame then
         local rW, rH = realFrame:GetSize()
+        if rW and rW > 0 then width = rW end
+        if rH and rH > 0 then height = rH end
 
-        if rW and rW > 10 then width = math.min(rW, 200) end
-        if rH and rH > 10 then height = math.min(rH, 100) end
-
-        local parent = f:GetParent()
-        local parentScale = parent and parent:GetEffectiveScale() or 1
+        local parentScale = f:GetParent():GetEffectiveScale() or 1
         if parentScale > 0 then
             scale = realFrame:GetEffectiveScale() / parentScale
         end
@@ -142,15 +143,24 @@ local function UpdatePreviewState(f, frameType)
         f.bg:SetSize(w - 2 * px, h - 2 * px)
     end
 
-    -- force layout update on the preview container
     if f.ATContainer then
         f.ATContainer:UpdateLayout()
     end
 end
 
 local function CreatePreviewFrame(parent, frameType)
-    local f = CreateFrame("Frame", nil, parent)
-    f:SetPoint("TOPLEFT", parent, "TOPLEFT", 400, -150)
+    local bounds = CreateFrame("Frame", nil, parent)
+    bounds:SetPoint("TOPLEFT", parent, "TOPLEFT", 300, -50)
+    bounds:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 16)
+    bounds:SetClipsChildren(true)
+
+    local titleText = bounds:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    titleText:SetPoint("TOP", bounds, "TOP", 0, -10)
+    titleText:SetText("Preview")
+    titleText:SetTextColor(1, 1, 1, 1)
+
+    local f = CreateFrame("Frame", nil, bounds)
+    f:SetPoint("CENTER", bounds, "CENTER", 0, 0)
     f:SetSize(120, 60)
 
     local border = f:CreateTexture(nil, "BACKGROUND")
@@ -164,11 +174,6 @@ local function CreatePreviewFrame(parent, frameType)
     local c = C_ClassColor.GetClassColor(class or "PRIEST")
     f.bg:SetTexture(ns.CONSTANTS.TEXTURE_WHITE)
     f.bg:SetVertexColor(c.r, c.g, c.b, 1)
-
-    local text = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    text:SetPoint("BOTTOM", f, "TOP", 0, 10)
-    text:SetText("Preview")
-    text:SetTextColor(1, 1, 1, 1)
 
     f.ATContainer = ns.Container.Create(f, frameType)
     f.ATContainer.isPreview = true
@@ -186,6 +191,8 @@ local function CreatePreviewFrame(parent, frameType)
     return f
 end
 
+--[[ main options setup ]]
+
 local function BuildPage(pageFrame, dbNode, frameType, refreshFuncs)
     local shapes = {}
     for name, _ in pairs(ns.shapes) do table.insert(shapes, name) end
@@ -199,6 +206,10 @@ local function BuildPage(pageFrame, dbNode, frameType, refreshFuncs)
     title:SetText(pageFrame.name)
 
     local anchorWidget = title
+
+    if frameType == "arena" then
+        anchorWidget = CreateCheckbox("Show Player Indicator", "showPlayer", dbNode, pageFrame, anchorWidget, refreshFuncs)
+    end
 
     anchorWidget = CreateCheckbox("Show Index#", "showIndex", dbNode, pageFrame, anchorWidget, refreshFuncs)
     anchorWidget = CreateSlider("Size", "size", dbNode, pageFrame, anchorWidget, 5, 30, 1, refreshFuncs)
@@ -222,7 +233,6 @@ function ns.SetupOptions()
         for _, func in ipairs(refreshFuncs) do func() end
     end
 
-    -- Main Category Panel
     local mainPanel = CreateFrame("Frame")
     mainPanel.name = addonName
 
@@ -266,19 +276,16 @@ function ns.SetupOptions()
         ns.ResetSettings()
     end)
 
-    -- Party Subcategory Panel
     local partyPanel = CreateFrame("Frame")
     partyPanel.name = "Party Frames"
     partyPanel.parent = mainPanel.name
     BuildPage(partyPanel, ns.db.party, "party", refreshFuncs)
 
-    -- Arena Subcategory Panel
     local arenaPanel = CreateFrame("Frame")
     arenaPanel.name = "Arena Frames"
     arenaPanel.parent = mainPanel.name
     BuildPage(arenaPanel, ns.db.arena, "arena", refreshFuncs)
 
-    -- Registration
     if Settings and Settings.RegisterCanvasLayoutCategory then
         local mainCategory = Settings.RegisterCanvasLayoutCategory(mainPanel, mainPanel.name)
         Settings.RegisterAddOnCategory(mainCategory)

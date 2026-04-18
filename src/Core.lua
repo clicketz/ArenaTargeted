@@ -46,10 +46,17 @@ local function OnUnitTargetUpdate(unit)
     local sourceIndex = arenaIndex or partyIndex
     local unitTarget = arenaIndex and ARENA_TARGETS[unit] or PARTY_TARGETS[unit]
 
+    local skipUpdate = false
+    if sourceFrameType == "arena" and unit == "player" then
+        if not ns.db.arena.showPlayer then
+            skipUpdate = true
+        end
+    end
+
     local r, g, b = ns.GetUnitColor(unit)
     local targetClass, targetHeuristic
 
-    if UnitExists(unitTarget) then
+    if not skipUpdate and UnitExists(unitTarget) then
         local _, class = UnitClass(unitTarget)
         targetClass = class
         targetHeuristic = UnitHonorLevel(unitTarget)
@@ -62,43 +69,56 @@ local function OnUnitTargetUpdate(unit)
         local container = instances[i]
 
         if container.frameType == sourceFrameType then
-            local parent = container:GetParent()
-            local frameUnit = GetFrameUnit(parent, container.frameType)
+            if skipUpdate then
+                container:UpdateEnemyState(sourceIndex, nil)
+            else
+                local parent = container:GetParent()
+                local frameUnit = GetFrameUnit(parent, container.frameType)
 
-            if r and frameUnit then
-                local isMatch = false
+                if r and frameUnit then
+                    local isMatch = false
 
-                if UnitIsUnit(frameUnit, unitTarget) then
-                    isMatch = true
-                else
-                    if not heuristicMatchFound and targetClass then
-                        local _, frameClass = UnitClass(frameUnit)
-                        if frameClass == targetClass then
-                            local frameHeuristic = UnitHonorLevel(frameUnit)
-                            if frameHeuristic == targetHeuristic then
-                                isMatch = true
-                                heuristicMatchFound = true
+                    if UnitIsUnit(frameUnit, unitTarget) then
+                        isMatch = true
+                    else
+                        if not heuristicMatchFound and targetClass then
+                            local _, frameClass = UnitClass(frameUnit)
+                            if frameClass == targetClass then
+                                local frameHeuristic = UnitHonorLevel(frameUnit)
+                                if frameHeuristic == targetHeuristic then
+                                    isMatch = true
+                                    heuristicMatchFound = true
+                                end
                             end
                         end
                     end
-                end
 
-                container:UpdateEnemyState(sourceIndex, r, g, b, isMatch)
-            else
-                container:UpdateEnemyState(sourceIndex, nil)
+                    container:UpdateEnemyState(sourceIndex, r, g, b, isMatch)
+                else
+                    container:UpdateEnemyState(sourceIndex, nil)
+                end
             end
         end
     end
+end
+
+function ns.ForceUpdateTargetStates()
+    for unit in pairs(ARENA_INDICES) do OnUnitTargetUpdate(unit) end
+    for unit in pairs(PARTY_INDICES) do OnUnitTargetUpdate(unit) end
 end
 
 function ns.SetupCombatEvents()
     local masterListener = CreateFrame("FRAME", nil, UIParent)
     masterListener:RegisterEvent("PLAYER_ENTERING_WORLD")
     masterListener:RegisterEvent("ARENA_OPPONENT_UPDATE")
+    masterListener:RegisterEvent("GROUP_ROSTER_UPDATE")
     masterListener:SetScript("OnEvent", function(self, event)
         if event == "PLAYER_ENTERING_WORLD" then
             ns.Container.ResetAll()
         end
+        ns.TryInjectFrames()
+        ns.Container.UpdateAll()
+        ns.ForceUpdateTargetStates()
     end)
 
     local arenaListener = CreateFrame("FRAME", nil, UIParent)
@@ -152,6 +172,7 @@ function ns.ResetSettings()
     for k, v in pairs(ns.defaults.arena) do ns.db.arena[k] = v end
 
     ns.Container.UpdateAll()
+    ns.ForceUpdateTargetStates()
 
     if ns.RefreshOptionUI then ns.RefreshOptionUI() end
     print("|cff33ff99ArenaTargeted:|r Settings reset to default.")

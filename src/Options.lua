@@ -4,27 +4,26 @@ local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
 
 --[[ widget constructors ]]
-
-local function CreateCheckbox(label, key, parent, anchorTo, refreshFuncs)
+local function CreateCheckbox(label, key, dbNode, parent, anchorTo, refreshFuncs)
     local cb = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
     cb:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -10)
     cb.Text:SetText(label)
 
     local function Refresh()
-        cb:SetChecked(ns.db[key])
+        cb:SetChecked(dbNode[key])
     end
 
     Refresh()
     table.insert(refreshFuncs, Refresh)
 
     cb:SetScript("OnClick", function(self)
-        ns.db[key] = self:GetChecked()
+        dbNode[key] = self:GetChecked()
         ns.Container.UpdateAll()
     end)
     return cb
 end
 
-local function CreateSlider(label, key, parent, anchorTo, minVal, maxVal, step, refreshFuncs)
+local function CreateSlider(label, key, dbNode, parent, anchorTo, minVal, maxVal, step, refreshFuncs)
     local slider = CreateFrame("Slider", nil, parent, "OptionsSliderTemplate")
     slider:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -30)
     slider:SetWidth(200)
@@ -36,7 +35,7 @@ local function CreateSlider(label, key, parent, anchorTo, minVal, maxVal, step, 
     if slider.High then slider.High:SetText(maxVal) end
 
     local function Refresh()
-        local val = ns.db[key]
+        local val = dbNode[key]
         slider:SetValue(val)
         if slider.Text then slider.Text:SetText(label .. ": " .. tostring(val)) end
     end
@@ -46,14 +45,14 @@ local function CreateSlider(label, key, parent, anchorTo, minVal, maxVal, step, 
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value / step + 0.5) * step
-        ns.db[key] = value
+        dbNode[key] = value
         if self.Text then self.Text:SetText(label .. ": " .. tostring(value)) end
         ns.Container.UpdateAll()
     end)
     return slider
 end
 
-local function CreateDropdown(label, key, parent, anchorTo, options, refreshFuncs)
+local function CreateDropdown(label, key, dbNode, parent, anchorTo, options, refreshFuncs)
     local fontString = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     fontString:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -20)
     fontString:SetWidth(110)
@@ -69,12 +68,12 @@ local function CreateDropdown(label, key, parent, anchorTo, options, refreshFunc
         for _, opt in ipairs(options) do
             info.text = opt
             info.func = function()
-                ns.db[key] = opt
+                dbNode[key] = opt
                 UIDropDownMenu_SetSelectedValue(dd, opt)
                 UIDropDownMenu_SetText(dd, opt)
                 ns.Container.UpdateAll()
             end
-            info.checked = (ns.db[key] == opt)
+            info.checked = (dbNode[key] == opt)
             UIDropDownMenu_AddButton(info, level)
         end
     end
@@ -82,7 +81,7 @@ local function CreateDropdown(label, key, parent, anchorTo, options, refreshFunc
     UIDropDownMenu_Initialize(dd, Init)
 
     local function Refresh()
-        local val = ns.db[key]
+        local val = dbNode[key]
         UIDropDownMenu_SetSelectedValue(dd, val)
         UIDropDownMenu_SetText(dd, val)
     end
@@ -96,22 +95,32 @@ end
 local function CreateButton(label, parent, anchorTo, width, onClick)
     local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     btn:SetSize(width, 25)
-    btn:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -20)
+    if anchorTo then
+        btn:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -20)
+    end
     btn:SetText(label)
     btn:SetScript("OnClick", onClick)
     return btn
 end
 
 --[[ preview frame configuration ]]
-
-local function UpdatePreviewState(f)
+local function UpdatePreviewState(f, frameType)
     local width, height = 120, 60
     local scale = 1
 
-    local realFrame = _G["CompactPartyFrameMember1"]
+    local realFrame
+    if frameType == "arena" then
+        realFrame = _G["CompactArenaFrameMember1"]
+    else
+        realFrame = _G["CompactPartyFrameMember1"]
+    end
 
     if realFrame then
-        width, height = realFrame:GetSize()
+        local rW, rH = realFrame:GetSize()
+
+        if rW and rW > 10 then width = math.min(rW, 200) end
+        if rH and rH > 10 then height = math.min(rH, 100) end
+
         local parent = f:GetParent()
         local parentScale = parent and parent:GetEffectiveScale() or 1
         if parentScale > 0 then
@@ -139,9 +148,9 @@ local function UpdatePreviewState(f)
     end
 end
 
-local function CreatePreviewFrame(parent)
-    local f = CreateFrame("Frame", "ArenaTargetedPreview", parent)
-    f:SetPoint("TOPLEFT", parent, "TOPLEFT", 400, -250)
+local function CreatePreviewFrame(parent, frameType)
+    local f = CreateFrame("Frame", nil, parent)
+    f:SetPoint("TOPLEFT", parent, "TOPLEFT", 400, -150)
     f:SetSize(120, 60)
 
     local border = f:CreateTexture(nil, "BACKGROUND")
@@ -161,50 +170,77 @@ local function CreatePreviewFrame(parent)
     text:SetText("Preview")
     text:SetTextColor(1, 1, 1, 1)
 
-    f.ATContainer = ns.Container.Create(f)
+    f.ATContainer = ns.Container.Create(f, frameType)
     f.ATContainer.isPreview = true
 
-    -- this ensures the preview frame is accurately sized
     parent:HookScript("OnSizeChanged", function()
-        UpdatePreviewState(f)
+        UpdatePreviewState(f, frameType)
     end)
 
-    -- this handles tab switching where size might not change but visibility does
     parent:HookScript("OnShow", function()
-        UpdatePreviewState(f)
+        UpdatePreviewState(f, frameType)
     end)
 
-    -- initial state
-    UpdatePreviewState(f)
+    UpdatePreviewState(f, frameType)
     f:Show()
+    return f
 end
 
---[[ main options setup ]]
+local function BuildPage(pageFrame, dbNode, frameType, refreshFuncs)
+    local shapes = {}
+    for name, _ in pairs(ns.shapes) do table.insert(shapes, name) end
+    table.sort(shapes)
+
+    local anchors = { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT" }
+    local directions = { "RIGHT", "LEFT", "UP", "DOWN" }
+
+    local title = pageFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 16, -16)
+    title:SetText(pageFrame.name)
+
+    local anchorWidget = title
+
+    anchorWidget = CreateCheckbox("Show Index#", "showIndex", dbNode, pageFrame, anchorWidget, refreshFuncs)
+    anchorWidget = CreateSlider("Size", "size", dbNode, pageFrame, anchorWidget, 5, 30, 1, refreshFuncs)
+    anchorWidget = CreateSlider("Border Thickness", "borderSize", dbNode, pageFrame, anchorWidget, 1, 5, 1, refreshFuncs)
+    anchorWidget = CreateSlider("Spacing", "spacing", dbNode, pageFrame, anchorWidget, 0, 10, 1, refreshFuncs)
+    anchorWidget = CreateDropdown("Shape:", "shape", dbNode, pageFrame, anchorWidget, shapes, refreshFuncs)
+    anchorWidget = CreateDropdown("Anchor:", "anchor", dbNode, pageFrame, anchorWidget, anchors, refreshFuncs)
+    anchorWidget = CreateDropdown("Relative To:", "relativePoint", dbNode, pageFrame, anchorWidget, anchors, refreshFuncs)
+    anchorWidget = CreateDropdown("Grow Direction:", "growDirection", dbNode, pageFrame, anchorWidget, directions, refreshFuncs)
+    anchorWidget = CreateSlider("X Offset", "x", dbNode, pageFrame, anchorWidget, -50, 50, 1, refreshFuncs)
+    anchorWidget = CreateSlider("Y Offset", "y", dbNode, pageFrame, anchorWidget, -50, 50, 1, refreshFuncs)
+
+    CreatePreviewFrame(pageFrame, frameType)
+
+    return anchorWidget
+end
 
 function ns.SetupOptions()
-    local panel = CreateFrame("Frame")
-    panel.name = addonName
-
-    local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText(addonName)
-
-    local version = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-    version:SetText("Version: " .. tostring(C_AddOns.GetAddOnMetadata(addonName, "Version") or "Unknown"))
-
-    local author = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    author:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -4)
-    author:SetText("Author: " .. tostring(C_AddOns.GetAddOnMetadata(addonName, "Author") or "Unknown"))
-
     local refreshFuncs = {}
     function ns.RefreshOptionUI()
         for _, func in ipairs(refreshFuncs) do func() end
     end
 
-    local helpPanel = CreateFrame("Frame", nil, panel)
+    -- Main Category Panel
+    local mainPanel = CreateFrame("Frame")
+    mainPanel.name = addonName
+
+    local mainTitle = mainPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    mainTitle:SetPoint("TOPLEFT", 16, -16)
+    mainTitle:SetText(addonName)
+
+    local version = mainPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    version:SetPoint("TOPLEFT", mainTitle, "BOTTOMLEFT", 0, -8)
+    version:SetText("Version: " .. tostring(C_AddOns.GetAddOnMetadata(addonName, "Version") or "Unknown"))
+
+    local author = mainPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    author:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -4)
+    author:SetText("Author: " .. tostring(C_AddOns.GetAddOnMetadata(addonName, "Author") or "Unknown"))
+
+    local helpPanel = CreateFrame("Frame", nil, mainPanel)
     helpPanel:SetSize(200, 100)
-    helpPanel:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -20, -20)
+    helpPanel:SetPoint("TOPRIGHT", mainPanel, "TOPRIGHT", -20, -20)
 
     local helpTitle = helpPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     helpTitle:SetPoint("TOPLEFT", 0, 0)
@@ -226,41 +262,36 @@ function ns.SetupOptions()
     lastHelp = AddCommand("/arenatargeted", "Alias for /at", lastHelp)
     lastHelp = AddCommand("/at reset", "Reset all settings", lastHelp)
 
-    local lastWidget = author
-    lastWidget = CreateCheckbox("Show Arena ID#", "showIndex", panel, lastWidget, refreshFuncs)
-    lastWidget = CreateSlider("Size", "size", panel, lastWidget, 5, 30, 1, refreshFuncs)
-    lastWidget = CreateSlider("Border Thickness", "borderSize", panel, lastWidget, 1, 5, 1, refreshFuncs)
-    lastWidget = CreateSlider("Spacing", "spacing", panel, lastWidget, 0, 10, 1, refreshFuncs)
-
-    local shapes = {}
-    for name, _ in pairs(ns.shapes) do
-        table.insert(shapes, name)
-    end
-    table.sort(shapes)
-    lastWidget = CreateDropdown("Shape:", "shape", panel, lastWidget, shapes, refreshFuncs)
-
-    local anchors = { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT" }
-    lastWidget = CreateDropdown("Anchor:", "anchor", panel, lastWidget, anchors, refreshFuncs)
-    lastWidget = CreateDropdown("Relative To:", "relativePoint", panel, lastWidget, anchors, refreshFuncs)
-
-    local directions = { "RIGHT", "LEFT", "UP", "DOWN" }
-    lastWidget = CreateDropdown("Grow Direction:", "growDirection", panel, lastWidget, directions, refreshFuncs)
-
-    lastWidget = CreateSlider("X Offset", "x", panel, lastWidget, -50, 50, 1, refreshFuncs)
-    lastWidget = CreateSlider("Y Offset", "y", panel, lastWidget, -50, 50, 1, refreshFuncs)
-
-    lastWidget = CreateButton("Reset to Defaults", panel, lastWidget, 140, function()
+    CreateButton("Reset to Defaults", mainPanel, author, 140, function()
         ns.ResetSettings()
     end)
 
-    CreatePreviewFrame(panel)
+    -- Party Subcategory Panel
+    local partyPanel = CreateFrame("Frame")
+    partyPanel.name = "Party Frames"
+    partyPanel.parent = mainPanel.name
+    BuildPage(partyPanel, ns.db.party, "party", refreshFuncs)
 
+    -- Arena Subcategory Panel
+    local arenaPanel = CreateFrame("Frame")
+    arenaPanel.name = "Arena Frames"
+    arenaPanel.parent = mainPanel.name
+    BuildPage(arenaPanel, ns.db.arena, "arena", refreshFuncs)
+
+    -- Registration
     if Settings and Settings.RegisterCanvasLayoutCategory then
-        local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
-        Settings.RegisterAddOnCategory(category)
-        ns.categoryID = category:GetID()
+        local mainCategory = Settings.RegisterCanvasLayoutCategory(mainPanel, mainPanel.name)
+        Settings.RegisterAddOnCategory(mainCategory)
+        ns.categoryID = mainCategory:GetID()
+
+        local partyCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, partyPanel, partyPanel.name)
+        Settings.RegisterAddOnCategory(partyCategory)
+
+        local arenaCategory = Settings.RegisterCanvasLayoutSubcategory(mainCategory, arenaPanel, arenaPanel.name)
+        Settings.RegisterAddOnCategory(arenaCategory)
     else
-        -- legacy fallback
-        InterfaceOptions_AddCategory(panel)
+        InterfaceOptions_AddCategory(mainPanel)
+        InterfaceOptions_AddCategory(partyPanel)
+        InterfaceOptions_AddCategory(arenaPanel)
     end
 end

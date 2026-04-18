@@ -1,9 +1,11 @@
+-- src/Config.lua
 local _, ns = ...
 local C_ClassColor = C_ClassColor
 
 -- constants
 ns.CONSTANTS = {
     MAX_ARENA_ENEMIES = 5,
+    MAX_PARTY_MEMBERS = 5,
     TEXTURE_WHITE = "Interface\\BUTTONS\\WHITE8X8",
     TEXTURE_RAID_ICONS = "Interface\\TargetingFrame\\UI-RaidTargetingIcons",
     -- These indices correspond to the position of the icon located in UI-RaidTargetingIcons
@@ -24,17 +26,32 @@ ns.CONSTANTS = {
 
 -- db defaults
 ns.defaults = {
-    anchor = "BOTTOMLEFT",
-    relativePoint = "BOTTOMRIGHT",
-    x = 2,
-    y = 0,
-    growDirection = "RIGHT",
-    spacing = 2,
-    size = 12,
-    borderSize = 1,
-    showIndex = false,
-    fontSize = 10,
-    shape = "Box",
+    party = {
+        anchor = "BOTTOMLEFT",
+        relativePoint = "BOTTOMRIGHT",
+        x = 2,
+        y = 0,
+        growDirection = "RIGHT",
+        spacing = 2,
+        size = 12,
+        borderSize = 1,
+        showIndex = false,
+        fontSize = 10,
+        shape = "Box",
+    },
+    arena = {
+        anchor = "BOTTOMLEFT",
+        relativePoint = "BOTTOMRIGHT",
+        x = 2,
+        y = 0,
+        growDirection = "RIGHT",
+        spacing = 2,
+        size = 12,
+        borderSize = 1,
+        showIndex = false,
+        fontSize = 10,
+        shape = "Box",
+    }
 }
 
 -- pre-fetched colors for preview frame

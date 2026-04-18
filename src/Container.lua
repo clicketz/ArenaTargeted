@@ -1,3 +1,4 @@
+-- src/Container.lua
 local _, ns = ...
 
 local ipairs = ipairs
@@ -10,9 +11,10 @@ ns.Container = {}
 ns.Container.instances = {}
 
 -- factory
-function ns.Container.Create(parent)
+function ns.Container.Create(parent, frameType)
     local container = CreateFrame("Frame", nil, parent)
     container:SetSize(1, 1)
+    container.frameType = frameType
 
     Mixin(container, ns.ContainerMixin)
     container:Init()
@@ -41,7 +43,7 @@ ns.ContainerMixin = {}
 function ns.ContainerMixin:Init()
     self.indicators = {}
 
-    for i = 1, ns.CONSTANTS.MAX_ARENA_ENEMIES do
+    for i = 1, 5 do
         local indicator = CreateFrame("Frame", nil, self)
         indicator:SetFrameLevel(self:GetParent():GetFrameLevel() + 10)
         indicator:EnableMouse(false)
@@ -65,7 +67,9 @@ function ns.ContainerMixin:Init()
 end
 
 function ns.ContainerMixin:UpdateLayout()
-    local db = ns.db
+    if not self.frameType then return end
+
+    local db = ns.db[self.frameType]
     local px = ns.GetPixelScale(self)
     local parent = self:GetParent()
 
@@ -117,10 +121,10 @@ function ns.ContainerMixin:ResetIndicators()
     end
 end
 
-function ns.ContainerMixin:UpdateEnemyState(arenaIndex, r, g, b, isMatch)
+function ns.ContainerMixin:UpdateEnemyState(sourceIndex, r, g, b, isMatch)
     if self.isPreview then return end
 
-    local indicator = self.indicators[arenaIndex]
+    local indicator = self.indicators[sourceIndex]
     if indicator then
         if r then
             indicator:SetColor(r, g, b)

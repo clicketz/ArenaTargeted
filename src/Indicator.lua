@@ -1,5 +1,5 @@
+-- src/Indicator.lua
 local _, ns = ...
-
 local floor = math.floor
 
 --[[ indicator mixin ]]
@@ -49,11 +49,12 @@ end
 
 -- updates visibility of index text and updates font
 function ns.IndicatorMixin:UpdateIndexDisplay()
-    if ns.db.showIndex then
+    local db = ns.db[self:GetParent().frameType]
+    if db.showIndex then
         self.text:Show()
         self.text:SetText(self.index)
         local fName, _, fFlags = self.text:GetFont()
-        self.text:SetFont(fName, ns.db.fontSize, fFlags)
+        self.text:SetFont(fName, db.fontSize, fFlags)
     else
         self.text:Hide()
     end
@@ -132,7 +133,7 @@ end
 
 function ns.IndicatorMixin:Setup(shapeDef, parent, px)
     local width, height
-    local db = ns.db
+    local db = ns.db[self:GetParent().frameType]
 
     if shapeDef.type == "line" then
         width = ns.SnapToScale(parent:GetWidth(), px)

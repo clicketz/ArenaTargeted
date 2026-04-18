@@ -111,7 +111,8 @@ local function UpdatePreviewState(f, frameType)
 
     local realFrame
     if frameType == "arena" then
-        realFrame = _G["CompactArenaFrameMember1"]
+        -- Prioritize sArena frames for preview scale/size if available
+        realFrame = _G["sArenaEnemyFrame1"] or _G["CompactArenaFrameMember1"]
     else
         realFrame = _G["CompactPartyFrameMember1"]
     end

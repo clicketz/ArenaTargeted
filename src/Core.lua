@@ -71,7 +71,6 @@ local function OnUnitTargetUpdate(unit)
     end
 
     local instances = ns.Container.instances
-    local heuristicMatchFound = false
 
     for i = 1, #instances do
         local container = instances[i]
@@ -88,15 +87,13 @@ local function OnUnitTargetUpdate(unit)
 
                     if frameUnit == "player" or unitTarget == "target" then
                         isMatch = UnitIsUnit(frameUnit, unitTarget)
-                    else
-                        if not heuristicMatchFound and targetClass then
-                            local _, frameClass = UnitClass(frameUnit)
-                            if frameClass == targetClass then
-                                local frameHeuristic = UnitHonorLevel(frameUnit)
-                                if frameHeuristic == targetHeuristic then
-                                    isMatch = true
-                                    heuristicMatchFound = true
-                                end
+                    elseif targetClass then
+                        -- Perform independent heuristic check per unit frame instance
+                        local _, frameClass = UnitClass(frameUnit)
+                        if frameClass == targetClass then
+                            local frameHeuristic = UnitHonorLevel(frameUnit)
+                            if frameHeuristic == targetHeuristic then
+                                isMatch = true
                             end
                         end
                     end
@@ -154,6 +151,11 @@ function ns.TryInjectFrames()
         local arenaFrame = _G["CompactArenaFrameMember" .. i]
         if arenaFrame and not arenaFrame.ATContainer then
             arenaFrame.ATContainer = ns.Container.Create(arenaFrame, "arena")
+        end
+
+        local sArenaFrame = _G["sArenaEnemyFrame" .. i]
+        if sArenaFrame and not sArenaFrame.ATContainer then
+            sArenaFrame.ATContainer = ns.Container.Create(sArenaFrame, "arena")
         end
 
         local legacyArenaFrame = _G["ArenaEnemyMatchFrame" .. i] or _G["ArenaEnemyFrame" .. i]

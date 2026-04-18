@@ -1,4 +1,3 @@
--- src/Indicator.lua
 local _, ns = ...
 local floor = math.floor
 
@@ -36,6 +35,10 @@ end
 
 function ns.IndicatorMixin:SetColor(r, g, b)
     self.inner:SetVertexColor(r, g, b, 1)
+end
+
+function ns.IndicatorMixin:SetBorderColor(r, g, b, a)
+    self.border:SetVertexColor(r, g, b, a or 1)
 end
 
 -- controls visibility based on targeting status

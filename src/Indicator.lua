@@ -41,11 +41,8 @@ function ns.IndicatorMixin:SetBorderColor(r, g, b, a)
     self.border:SetVertexColor(r, g, b, a or 1)
 end
 
--- controls visibility based on targeting status
--- NOTE: isMatch is a secret value returned from UnitIsUnit
+-- NOTE: isMatch is a secret value
 function ns.IndicatorMixin:SetVisible(isMatch)
-    -- always show the frame, but let the secure api handle the alpha
-    -- to bypass secret issues
     self:Show()
     self:SetAlphaFromBoolean(isMatch)
 end

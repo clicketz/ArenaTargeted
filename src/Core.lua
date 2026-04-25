@@ -90,10 +90,6 @@ local function OnUnitTargetUpdate(unit)
                     elseif targetClass then
                         local _, frameClass = UnitClass(frameUnit)
                         if frameClass == targetClass then
-                            -- NOTE: UnitHonor is more accurate (probably) but need to use UnitHonorLevel
-                            -- because UnitHonor only works for grouped units, returns 0 for everyone else
-                            -- reminder this only matters if there's multiple of the same class not including
-                            -- the player
                             local frameHeuristic = UnitHonorLevel(frameUnit)
                             if frameHeuristic == targetHeuristic then
                                 isMatch = true

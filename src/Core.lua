@@ -202,7 +202,11 @@ function ns.SlashCommandHandler(msg)
     if command == "reset" then
         ns.ResetSettings()
     else
-        Settings.OpenToCategory(ns.categoryID)
+        if InCombatLockdown() then
+            print("|cff33ff99ArenaTargeted:|r Cannot open settings while in combat.")
+        else
+            Settings.OpenToCategory(ns.categoryID)
+        end
     end
 end
 

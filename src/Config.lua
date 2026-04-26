@@ -41,6 +41,7 @@ ns.defaults = {
     arena = {
         enabled = true,
         showPlayer = true,
+        highlightPlayer = true,
         anchor = "BOTTOMLEFT",
         relativePoint = "BOTTOMRIGHT",
         x = 2,

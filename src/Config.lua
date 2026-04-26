@@ -2,8 +2,8 @@ local _, ns = ...
 
 -- constants
 ns.CONSTANTS = {
-    MAX_ARENA_ENEMIES = 5,
-    MAX_PARTY_MEMBERS = 5,
+    MAX_ARENA_ENEMIES = 3,
+    MAX_PARTY_MEMBERS = 3,
     TEXTURE_WHITE = "Interface\\BUTTONS\\WHITE8X8",
     TEXTURE_RAID_ICONS = "Interface\\TargetingFrame\\UI-RaidTargetingIcons",
     -- These indices correspond to the position of the icon located in UI-RaidTargetingIcons

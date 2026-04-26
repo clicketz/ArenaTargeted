@@ -52,7 +52,7 @@ ns.defaults = {
         borderSize = 1,
         showIndex = false,
         fontSize = 10,
-        shape = "Box",
+        shape = "Skull",
     }
 }
 

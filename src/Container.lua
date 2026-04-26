@@ -1,9 +1,5 @@
 local _, ns = ...
 
-local ipairs = ipairs
-local table = table
-local PixelUtil = PixelUtil
-
 --[[ static container class ]]
 
 ns.Container = {}

@@ -1,5 +1,4 @@
 local _, ns = ...
-local C_ClassColor = C_ClassColor
 
 -- constants
 ns.CONSTANTS = {

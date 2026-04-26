@@ -3,7 +3,6 @@ local addonName, ns = ...
 local UnitExists = UnitExists
 local UnitClass = UnitClass
 local UnitHonorLevel = UnitHonorLevel
-local UnitHonor = UnitHonor
 local UnitIsUnit = UnitIsUnit
 
 local ARENA_INDICES = {

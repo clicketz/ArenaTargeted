@@ -1,7 +1,4 @@
 local addonName, ns = ...
-local Settings = Settings
-local UnitClass = UnitClass
-local C_ClassColor = C_ClassColor
 
 --[[ widget constructors ]]
 

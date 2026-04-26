@@ -1,8 +1,5 @@
 local _, ns = ...
 
-local select = select
-local floor = math.floor
-local GetPhysicalScreenSize = GetPhysicalScreenSize
 local UnitExists = UnitExists
 local UnitClass = UnitClass
 local C_ClassColor = C_ClassColor
@@ -19,7 +16,7 @@ end
 
 -- snaps value to nearest physical pixel
 function ns.SnapToScale(val, px)
-    return floor(val / px + 0.5) * px
+    return math.floor(val / px + 0.5) * px
 end
 
 -- returns unit class color components

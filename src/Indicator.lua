@@ -1,5 +1,4 @@
 local _, ns = ...
-local floor = math.floor
 
 --[[ indicator mixin ]]
 
@@ -113,7 +112,7 @@ function ns.IndicatorMixin:ApplyIconShape(index, width, height, px, borderSize)
 
     -- raid icons are in a 4x4 grid
     local col = (index - 1) % 4
-    local row = floor((index - 1) / 4)
+    local row = math.floor((index - 1) / 4)
     local texture = ns.CONSTANTS.TEXTURE_RAID_ICONS
 
     -- shift mask to reveal correct icon

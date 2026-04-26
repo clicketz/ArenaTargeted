@@ -26,6 +26,7 @@ ns.CONSTANTS = {
 -- db defaults
 ns.defaults = {
     party = {
+        enabled = true,
         anchor = "BOTTOMLEFT",
         relativePoint = "BOTTOMRIGHT",
         x = 2,
@@ -39,6 +40,7 @@ ns.defaults = {
         shape = "Box",
     },
     arena = {
+        enabled = true,
         showPlayer = true,
         anchor = "BOTTOMLEFT",
         relativePoint = "BOTTOMRIGHT",

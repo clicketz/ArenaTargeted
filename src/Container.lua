@@ -65,6 +65,14 @@ end
 
 function ns.ContainerMixin:UpdateLayout()
     local db = ns.db[self.frameType]
+
+    if db.enabled == false and not self.isPreview then
+        self:Hide()
+        return
+    else
+        self:Show()
+    end
+
     local px = ns.GetPixelScale(self)
     local parent = self:GetParent()
 

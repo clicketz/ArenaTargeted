@@ -55,6 +55,11 @@ local function OnUnitTargetUpdate(unit)
     local unitTarget = arenaIndex and ARENA_TARGETS[unit] or PARTY_TARGETS[unit]
 
     local skipUpdate = false
+
+    if not ns.db[sourceFrameType].enabled then
+        skipUpdate = true
+    end
+
     if sourceFrameType == "arena" and unit == "player" then
         if not ns.db.arena.showPlayer then
             skipUpdate = true

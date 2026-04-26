@@ -34,7 +34,7 @@ function ns.ToggleTestMode()
 
     if ns.RefreshOptionUI then ns.RefreshOptionUI() end
 
-    print("|cff33ff99ArenaTargeted:|r Test mode " .. (ns.testMode and "|cff00ff00ON|r" or "|cffff0000OFF|r") .. ".")
+    print("|cff33ff99ArenaTargeted:|r Test mode " .. (ns.testMode and "|cff00ff00ON|r. Will only show on frames that are visible." or "|cffff0000OFF|r"))
 end
 
 local function GetFrameUnit(frame, frameType)

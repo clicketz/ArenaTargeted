@@ -5,26 +5,37 @@ local UnitClass = UnitClass
 local UnitHonorLevel = UnitHonorLevel
 local UnitIsUnit = UnitIsUnit
 
-local ARENA_INDICES = {
-    ["arena1"] = 1,
-    ["arena2"] = 2,
-    ["arena3"] = 3,
-}
-local ARENA_TARGETS = {
-    ["arena1"] = "arena1target",
-    ["arena2"] = "arena2target",
-    ["arena3"] = "arena3target",
-}
-local PARTY_INDICES = {
-    ["player"] = 1,
-    ["party1"] = 2,
-    ["party2"] = 3,
-}
-local PARTY_TARGETS = {
-    ["player"] = "target",
-    ["party1"] = "party1target",
-    ["party2"] = "party2target",
-}
+local ARENA_INDICES = {}
+local ARENA_TARGETS = {}
+for i = 1, ns.CONSTANTS.MAX_ARENA_ENEMIES do
+    ARENA_INDICES["arena" .. i] = i
+    ARENA_TARGETS["arena" .. i] = "arena" .. i .. "target"
+end
+
+local PARTY_INDICES = { ["player"] = 1 }
+local PARTY_TARGETS = { ["player"] = "target" }
+for i = 2, ns.CONSTANTS.MAX_PARTY_MEMBERS do
+    PARTY_INDICES["party" .. (i - 1)] = i
+    PARTY_TARGETS["party" .. (i - 1)] = "party" .. (i - 1) .. "target"
+end
+
+ns.testMode = false
+
+function ns.ToggleTestMode()
+    ns.testMode = not ns.testMode
+
+    if ns.testMode then
+        ns.Container.UpdateAll()
+    else
+        ns.Container.ResetAll()
+        ns.Container.UpdateAll()
+        ns.ForceUpdateTargetStates()
+    end
+
+    if ns.RefreshOptionUI then ns.RefreshOptionUI() end
+
+    print("|cff33ff99ArenaTargeted:|r Test mode " .. (ns.testMode and "|cff00ff00ON|r" or "|cffff0000OFF|r") .. ".")
+end
 
 local function GetFrameUnit(frame, frameType)
     if frame.unit then return frame.unit end
@@ -44,6 +55,8 @@ local function GetFrameUnit(frame, frameType)
 end
 
 local function OnUnitTargetUpdate(unit)
+    if ns.testMode then return end
+
     local arenaIndex = ARENA_INDICES[unit]
     local partyIndex = PARTY_INDICES[unit]
 
@@ -115,6 +128,24 @@ function ns.ForceUpdateTargetStates()
     for unit in pairs(PARTY_INDICES) do OnUnitTargetUpdate(unit) end
 end
 
+-- RegisterUnitEvent can only register up to 4 units, so we create multiple listeners if needed
+local function RegisterChunkedUnitEvents(units)
+    for i = 1, #units, 4 do
+        local listener = CreateFrame("FRAME", nil, UIParent)
+        local chunk = {}
+        for j = 0, 3 do
+            local u = units[i + j]
+            if u then
+                table.insert(chunk, u)
+            end
+        end
+        listener:RegisterUnitEvent("UNIT_TARGET", unpack(chunk))
+        listener:SetScript("OnEvent", function(self, event, unit)
+            OnUnitTargetUpdate(unit)
+        end)
+    end
+end
+
 function ns.SetupCombatEvents()
     local masterListener = CreateFrame("FRAME", nil, UIParent)
     masterListener:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -129,21 +160,17 @@ function ns.SetupCombatEvents()
         ns.ForceUpdateTargetStates()
     end)
 
-    local arenaListener = CreateFrame("FRAME", nil, UIParent)
-    arenaListener:RegisterUnitEvent("UNIT_TARGET", "arena1", "arena2", "arena3")
-    arenaListener:SetScript("OnEvent", function(self, event, unit)
-        OnUnitTargetUpdate(unit)
-    end)
+    local arenaUnits = {}
+    for key in pairs(ARENA_INDICES) do table.insert(arenaUnits, key) end
+    RegisterChunkedUnitEvents(arenaUnits)
 
-    local partyListener = CreateFrame("FRAME", nil, UIParent)
-    partyListener:RegisterUnitEvent("UNIT_TARGET", "player", "party1", "party2")
-    partyListener:SetScript("OnEvent", function(self, event, unit)
-        OnUnitTargetUpdate(unit)
-    end)
+    local partyUnits = {}
+    for key in pairs(PARTY_INDICES) do table.insert(partyUnits, key) end
+    RegisterChunkedUnitEvents(partyUnits)
 end
 
 function ns.TryInjectFrames()
-    for i = 1, 5 do
+    for i = 1, ns.CONSTANTS.MAX_PARTY_MEMBERS do
         local partyFrame = _G["CompactPartyFrameMember" .. i]
         if partyFrame and not partyFrame.ATContainer then
             partyFrame.ATContainer = ns.Container.Create(partyFrame, "party")
@@ -151,7 +178,7 @@ function ns.TryInjectFrames()
     end
 
     if C_AddOns.IsAddOnLoaded("sArena_Reloaded") then
-        for i = 1, 5 do
+        for i = 1, ns.CONSTANTS.MAX_ARENA_ENEMIES do
             local sArenaFrame = _G["sArenaEnemyFrame" .. i]
             if sArenaFrame and not sArenaFrame.ATContainer then
                 sArenaFrame.ATContainer = ns.Container.Create(sArenaFrame, "arena")
@@ -160,7 +187,7 @@ function ns.TryInjectFrames()
         return
     end
 
-    for i = 1, 5 do
+    for i = 1, ns.CONSTANTS.MAX_ARENA_ENEMIES do
         local arenaFrame = _G["CompactArenaFrameMember" .. i]
         if arenaFrame and not arenaFrame.ATContainer then
             arenaFrame.ATContainer = ns.Container.Create(arenaFrame, "arena")
@@ -200,6 +227,8 @@ function ns.SlashCommandHandler(msg)
     local command = msg:lower()
     if command == "reset" then
         ns.ResetSettings()
+    elseif command == "test" then
+        ns.ToggleTestMode()
     else
         if InCombatLockdown() then
             print("|cff33ff99ArenaTargeted:|r Cannot open settings while in combat.")

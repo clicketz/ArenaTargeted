@@ -269,11 +269,21 @@ function ns.SetupOptions()
     local lastHelp = helpTitle
     lastHelp = AddCommand("/at", "Open this options menu", lastHelp)
     lastHelp = AddCommand("/arenatargeted", "Alias for /at", lastHelp)
+    lastHelp = AddCommand("/at test", "Toggle test mode", lastHelp)
     lastHelp = AddCommand("/at reset", "Reset all settings", lastHelp)
 
-    CreateButton("Reset to Defaults", mainPanel, author, 140, function()
+    local testBtn = CreateButton("Test: OFF", mainPanel, author, 140, function()
+        ns.ToggleTestMode()
+    end)
+    table.insert(refreshFuncs, function()
+        testBtn:SetText("Test: " .. (ns.testMode and "ON" or "OFF"))
+    end)
+
+    local resetBtn = CreateButton("Reset to Defaults", mainPanel, author, 140, function()
         ns.ResetSettings()
     end)
+    resetBtn:ClearAllPoints()
+    resetBtn:SetPoint("LEFT", testBtn, "RIGHT", 10, 0)
 
     local partyPanel = CreateFrame("Frame")
     partyPanel.name = "Party Frames"

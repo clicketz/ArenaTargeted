@@ -38,7 +38,9 @@ ns.ContainerMixin = {}
 function ns.ContainerMixin:Init()
     self.indicators = {}
 
-    for i = 1, 5 do
+    local maxIndicators = self.frameType == "arena" and ns.CONSTANTS.MAX_PARTY_MEMBERS or ns.CONSTANTS.MAX_ARENA_ENEMIES
+
+    for i = 1, maxIndicators do
         local indicator = CreateFrame("Frame", nil, self)
         indicator:SetFrameLevel(self:GetParent():GetFrameLevel() + 10)
         indicator:EnableMouse(false)
@@ -62,7 +64,7 @@ end
 function ns.ContainerMixin:UpdateLayout()
     local db = ns.db[self.frameType]
 
-    if db.enabled == false and not self.isPreview then
+    if db.enabled == false and not self.isPreview and not ns.testMode then
         self:Hide()
         return
     else
@@ -79,12 +81,10 @@ function ns.ContainerMixin:UpdateLayout()
 
     local spacing = ns.SnapToScale(db.spacing, px)
 
-    -- Determine dynamic layout order to collapse gaps from missing units or disabled indicators
     local layoutOrder = {}
     if self.frameType == "arena" then
-        for i = 2, 5 do
-            -- show 3 indicators for preview frame
-            local isSimulated = self.isPreview and (i <= 3)
+        for i = 2, ns.CONSTANTS.MAX_PARTY_MEMBERS do
+            local isSimulated = (self.isPreview and (i <= ns.CONSTANTS.MAX_PARTY_MEMBERS)) or ns.testMode
             if isSimulated or UnitExists("party" .. (i - 1)) then
                 table.insert(layoutOrder, i)
             end
@@ -93,8 +93,8 @@ function ns.ContainerMixin:UpdateLayout()
             table.insert(layoutOrder, 1) -- Player anchored at the end
         end
     else
-        for i = 1, 5 do
-            local isSimulated = self.isPreview and (i <= 3)
+        for i = 1, ns.CONSTANTS.MAX_ARENA_ENEMIES do
+            local isSimulated = (self.isPreview and (i <= ns.CONSTANTS.MAX_ARENA_ENEMIES)) or ns.testMode
             if isSimulated or UnitExists("arena" .. i) then
                 table.insert(layoutOrder, i)
             end
@@ -139,8 +139,8 @@ function ns.ContainerMixin:UpdateLayout()
 
         prev = indicator
 
-        if self.isPreview then
-            local c = ns.PREVIEW_COLORS[i]
+        if self.isPreview or ns.testMode then
+            local c = ns.PREVIEW_COLORS[i] or ns.PREVIEW_COLORS[1]
             if c then
                 indicator:Show()
                 indicator:SetColor(c.r, c.g, c.b)

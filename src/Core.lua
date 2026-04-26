@@ -146,27 +146,29 @@ local function RegisterChunkedUnitEvents(units)
     end
 end
 
+local function RefreshState()
+    ns.TryInjectFrames()
+    ns.Container.UpdateAll()
+    ns.ForceUpdateTargetStates()
+end
+
+local function OnPlayerEnteringWorld()
+    ns.Container.ResetAll()
+    RefreshState()
+end
+
 function ns.SetupCombatEvents()
-    local masterListener = CreateFrame("FRAME", nil, UIParent)
-    masterListener:RegisterEvent("PLAYER_ENTERING_WORLD")
-    masterListener:RegisterEvent("ARENA_OPPONENT_UPDATE")
-    masterListener:RegisterEvent("GROUP_ROSTER_UPDATE")
-    masterListener:SetScript("OnEvent", function(self, event)
-        if event == "PLAYER_ENTERING_WORLD" then
-            ns.Container.ResetAll()
-        end
-        ns.TryInjectFrames()
-        ns.Container.UpdateAll()
-        ns.ForceUpdateTargetStates()
-    end)
+    EventRegistry:RegisterFrameEventAndCallback("PLAYER_ENTERING_WORLD", OnPlayerEnteringWorld)
+    EventRegistry:RegisterFrameEventAndCallback("ARENA_OPPONENT_UPDATE", RefreshState)
+    EventRegistry:RegisterFrameEventAndCallback("GROUP_ROSTER_UPDATE", RefreshState)
 
-    local arenaUnits = {}
-    for key in pairs(ARENA_INDICES) do table.insert(arenaUnits, key) end
-    RegisterChunkedUnitEvents(arenaUnits)
+    local arenaUnitKeys = {}
+    for key in pairs(ARENA_INDICES) do table.insert(arenaUnitKeys, key) end
+    RegisterChunkedUnitEvents(arenaUnitKeys)
 
-    local partyUnits = {}
-    for key in pairs(PARTY_INDICES) do table.insert(partyUnits, key) end
-    RegisterChunkedUnitEvents(partyUnits)
+    local partyUnitKeys = {}
+    for key in pairs(PARTY_INDICES) do table.insert(partyUnitKeys, key) end
+    RegisterChunkedUnitEvents(partyUnitKeys)
 end
 
 function ns.TryInjectFrames()
@@ -201,12 +203,8 @@ function ns.TryInjectFrames()
 end
 
 function ns.SetupSystemEvents()
-    local systemListener = CreateFrame("FRAME")
-    systemListener:RegisterEvent("UI_SCALE_CHANGED")
-    systemListener:RegisterEvent("DISPLAY_SIZE_CHANGED")
-    systemListener:SetScript("OnEvent", function()
-        ns.Container.UpdateAll()
-    end)
+    EventRegistry:RegisterFrameEventAndCallback("UI_SCALE_CHANGED", ns.Container.UpdateAll)
+    EventRegistry:RegisterFrameEventAndCallback("DISPLAY_SIZE_CHANGED", ns.Container.UpdateAll)
 end
 
 function ns.ResetSettings()

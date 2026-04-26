@@ -153,14 +153,14 @@ local function CreatePreviewFrame(parent, frameType)
     bounds:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -16, 16)
     bounds:SetClipsChildren(true)
 
-    local titleText = bounds:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    titleText:SetPoint("TOP", bounds, "TOP", 0, -10)
-    titleText:SetText("Preview")
-    titleText:SetTextColor(1, 1, 1, 1)
-
     local f = CreateFrame("Frame", nil, bounds)
     f:SetPoint("CENTER", bounds, "CENTER", 0, 0)
     f:SetSize(120, 60)
+
+    local titleText = bounds:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    titleText:SetPoint("BOTTOM", f, "TOP", 0, 8)
+    titleText:SetText("Preview")
+    titleText:SetTextColor(1, 1, 1, 1)
 
     local border = f:CreateTexture(nil, "BACKGROUND")
     border:SetAllPoints()

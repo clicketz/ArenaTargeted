@@ -1,22 +1,13 @@
-local addonName, ns = ...
-
-local UnitExists = UnitExists
-local UnitClass = UnitClass
-local UnitHonorLevel = UnitHonorLevel
-local UnitIsUnit = UnitIsUnit
+local _, ns = ...
 
 local ARENA_INDICES = {}
-local ARENA_TARGETS = {}
 for i = 1, ns.CONSTANTS.MAX_ARENA_ENEMIES do
     ARENA_INDICES["arena" .. i] = i
-    ARENA_TARGETS["arena" .. i] = "arena" .. i .. "target"
 end
 
 local PARTY_INDICES = { ["player"] = 1 }
-local PARTY_TARGETS = { ["player"] = "target" }
 for i = 2, ns.CONSTANTS.MAX_PARTY_MEMBERS do
     PARTY_INDICES["party" .. (i - 1)] = i
-    PARTY_TARGETS["party" .. (i - 1)] = "party" .. (i - 1) .. "target"
 end
 
 ns.testMode = false
@@ -64,7 +55,7 @@ local function OnUnitTargetUpdate(unit)
 
     local sourceFrameType = arenaIndex and "party" or "arena"
     local sourceIndex = arenaIndex or partyIndex
-    local unitTarget = arenaIndex and ARENA_TARGETS[unit] or PARTY_TARGETS[unit]
+    local unitTarget = unit == "player" and "target" or unit .. "target"
 
     local skipUpdate = false
 
@@ -79,14 +70,6 @@ local function OnUnitTargetUpdate(unit)
     end
 
     local r, g, b = ns.GetUnitColor(unit)
-    local targetClass, targetHeuristic
-
-    if not skipUpdate and UnitExists(unitTarget) then
-        local _, class = UnitClass(unitTarget)
-        targetClass = class
-        targetHeuristic = UnitHonorLevel(unitTarget)
-    end
-
     local instances = ns.Container.instances
 
     for i = 1, #instances do
@@ -100,20 +83,7 @@ local function OnUnitTargetUpdate(unit)
                 local frameUnit = GetFrameUnit(parent, container.frameType)
 
                 if r and frameUnit then
-                    local isMatch = false
-
-                    if frameUnit == "player" or unitTarget == "target" then
-                        isMatch = UnitIsUnit(frameUnit, unitTarget)
-                    elseif targetClass then
-                        local _, frameClass = UnitClass(frameUnit)
-                        if frameClass == targetClass then
-                            local frameHeuristic = UnitHonorLevel(frameUnit)
-                            if frameHeuristic == targetHeuristic then
-                                isMatch = true
-                            end
-                        end
-                    end
-
+                    local isMatch = ns.IsMatch(frameUnit, unitTarget)
                     container:UpdateEnemyState(sourceIndex, r, g, b, isMatch)
                 else
                     container:UpdateEnemyState(sourceIndex, nil)

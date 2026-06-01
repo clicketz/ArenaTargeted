@@ -1,7 +1,5 @@
 local _, ns = ...
 
---[[ static container class ]]
-
 ns.Container = {}
 ns.Container.instances = {}
 
@@ -18,7 +16,6 @@ function ns.Container.Create(parent, frameType)
     return container
 end
 
--- managers
 function ns.Container.UpdateAll()
     for _, container in ipairs(ns.Container.instances) do
         container:UpdateLayout()
@@ -31,12 +28,11 @@ function ns.Container.ResetAll()
     end
 end
 
---[[ container mixin ]]
-
 ns.ContainerMixin = {}
 
 function ns.ContainerMixin:Init()
     self.indicators = {}
+    self.targetStates = {}
 
     local maxIndicators = self.frameType == "arena" and ns.CONSTANTS.MAX_PARTY_MEMBERS or ns.CONSTANTS.MAX_ARENA_ENEMIES
 
@@ -47,7 +43,6 @@ function ns.ContainerMixin:Init()
 
         Mixin(indicator, ns.IndicatorMixin)
         indicator:Init()
-        indicator:SetIndex(i)
 
         self.indicators[i] = indicator
     end
@@ -61,10 +56,66 @@ function ns.ContainerMixin:Init()
     self:UpdateLayout()
 end
 
+function ns.ContainerMixin:GetLayoutOrder(db)
+    local layoutOrder = {}
+    if self.frameType == "arena" then
+        for i = 2, ns.CONSTANTS.MAX_PARTY_MEMBERS do
+            table.insert(layoutOrder, i)
+        end
+        if db.showPlayer then
+            table.insert(layoutOrder, 1)
+        end
+    else
+        for i = 1, ns.CONSTANTS.MAX_ARENA_ENEMIES do
+            table.insert(layoutOrder, i)
+        end
+    end
+    return layoutOrder
+end
+
+function ns.ContainerMixin:RenderIndicators()
+    local db = ns.db[self.frameType]
+    local isSimulated = self.isPreview or ns.testMode
+    local layoutOrder = self:GetLayoutOrder(db)
+
+    local activeMatches = {}
+
+    for _, sourceIndex in ipairs(layoutOrder) do
+        if isSimulated then
+            local c = ns.PREVIEW_COLORS[sourceIndex] or ns.PREVIEW_COLORS
+            table.insert(activeMatches, { sourceIndex = sourceIndex, r = c.r, g = c.g, b = c.b })
+        else
+            local state = self.targetStates[sourceIndex]
+            if state then
+                table.insert(activeMatches, { sourceIndex = sourceIndex, r = state.r, g = state.g, b = state.b })
+            end
+        end
+    end
+
+    for i, indicator in ipairs(self.indicators) do
+        local match = activeMatches[i]
+        if match then
+            indicator:SetIndex(match.sourceIndex)
+            indicator:UpdateIndexDisplay()
+
+            if self.frameType == "arena" and match.sourceIndex == 1 and db.highlightPlayer then
+                indicator:SetBorderColor(1, 0.82, 0, 1)
+            else
+                indicator:SetBorderColor(0, 0, 0, 1)
+            end
+
+            indicator:SetColor(match.r, match.g, match.b)
+            indicator:Show()
+        else
+            indicator:Hide()
+        end
+    end
+end
+
 function ns.ContainerMixin:UpdateLayout()
     local db = ns.db[self.frameType]
 
-    if db.enabled == false and not self.isPreview and not ns.testMode then
+    if not db.enabled and not self.isPreview and not ns.testMode then
         self:Hide()
         return
     else
@@ -73,55 +124,16 @@ function ns.ContainerMixin:UpdateLayout()
 
     local px = ns.GetPixelScale(self)
     local parent = self:GetParent()
-
     local shapeDef = ns.shapes[db.shape] or ns.shapes["Box"]
+    local spacing = ns.SnapToScale(db.spacing, px)
 
     self:ClearAllPoints()
     PixelUtil.SetPoint(self, db.anchor, parent, db.relativePoint, db.x, db.y)
 
-    local spacing = ns.SnapToScale(db.spacing, px)
-
-    local layoutOrder = {}
-    if self.frameType == "arena" then
-        for i = 2, ns.CONSTANTS.MAX_PARTY_MEMBERS do
-            local isSimulated = (self.isPreview and (i <= ns.CONSTANTS.MAX_PARTY_MEMBERS)) or ns.testMode
-            if isSimulated or UnitExists("party" .. (i - 1)) then
-                table.insert(layoutOrder, i)
-            end
-        end
-        if db.showPlayer ~= false then
-            table.insert(layoutOrder, 1) -- Player anchored at the end
-        end
-    else
-        for i = 1, ns.CONSTANTS.MAX_ARENA_ENEMIES do
-            local isSimulated = (self.isPreview and (i <= ns.CONSTANTS.MAX_ARENA_ENEMIES)) or ns.testMode
-            if isSimulated or UnitExists("arena" .. i) then
-                table.insert(layoutOrder, i)
-            end
-        end
-    end
-
-    for _, indicator in ipairs(self.indicators) do
-        indicator:Hide()
-        indicator:ClearAllPoints()
-    end
-
     local prev = nil
-
-    for _, i in ipairs(layoutOrder) do
-        local indicator = self.indicators[i]
-
+    for _, indicator in ipairs(self.indicators) do
+        indicator:ClearAllPoints()
         indicator:Setup(shapeDef, parent, px)
-        indicator:UpdateIndexDisplay()
-
-        local isPlayerHighlight = (self.frameType == "arena" and i == 1 and db.highlightPlayer)
-
-        -- TODO: custom player highlight color?
-        if isPlayerHighlight then
-            indicator:SetBorderColor(1, 0.82, 0, 1) -- golden/yellow
-        else
-            indicator:SetBorderColor(0, 0, 0, 1)    -- black
-        end
 
         if not prev then
             indicator:SetPoint(db.anchor, self, db.anchor, 0, 0)
@@ -138,20 +150,15 @@ function ns.ContainerMixin:UpdateLayout()
         end
 
         prev = indicator
-
-        if self.isPreview or ns.testMode then
-            local c = ns.PREVIEW_COLORS[i] or ns.PREVIEW_COLORS[1]
-            if c then
-                indicator:Show()
-                indicator:SetColor(c.r, c.g, c.b)
-                indicator:SetVisible(true)
-            end
-        end
     end
+
+    self:RenderIndicators()
 end
 
 function ns.ContainerMixin:ResetIndicators()
     if self.isPreview then return end
+
+    wipe(self.targetStates)
 
     for _, indicator in ipairs(self.indicators) do
         indicator:Hide()
@@ -161,13 +168,11 @@ end
 function ns.ContainerMixin:UpdateEnemyState(sourceIndex, r, g, b, isMatch)
     if self.isPreview then return end
 
-    local indicator = self.indicators[sourceIndex]
-    if indicator then
-        if r then
-            indicator:SetColor(r, g, b)
-            indicator:SetVisible(isMatch)
-        else
-            indicator:Hide()
-        end
+    if r and isMatch then
+        self.targetStates[sourceIndex] = { r = r, g = g, b = b }
+    else
+        self.targetStates[sourceIndex] = nil
     end
+
+    self:RenderIndicators()
 end

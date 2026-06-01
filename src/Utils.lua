@@ -1,9 +1,5 @@
 local _, ns = ...
 
-local UnitExists = UnitExists
-local UnitClass = UnitClass
-local C_ClassColor = C_ClassColor
-
 -- calculates size of 1 physical pixel relative to frame scale
 function ns.GetPixelScale(frame)
     local screenHeight = select(2, GetPhysicalScreenSize())
@@ -22,7 +18,7 @@ end
 -- returns unit class color components
 function ns.GetUnitColor(unit)
     if UnitExists(unit) then
-        local _, classFilename = UnitClass(unit)
+        local classFilename = UnitClassBase(unit)
         if classFilename then
             local color = C_ClassColor.GetClassColor(classFilename)
             if color then
@@ -31,4 +27,14 @@ function ns.GetUnitColor(unit)
         end
     end
     return nil
+end
+
+function ns.IsMatch(unit1, unit2)
+    if not UnitExists(unit1) or not UnitExists(unit2) then return false end
+
+    local class1 = UnitClassBase(unit1)
+    local class2 = UnitClassBase(unit2)
+    if not class1 or class1 ~= class2 then return false end
+
+    return UnitHonorLevel(unit1) == UnitHonorLevel(unit2)
 end

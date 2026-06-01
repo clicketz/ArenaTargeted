@@ -40,12 +40,6 @@ function ns.IndicatorMixin:SetBorderColor(r, g, b, a)
     self.border:SetVertexColor(r, g, b, a or 1)
 end
 
--- NOTE: isMatch is a secret value
-function ns.IndicatorMixin:SetVisible(isMatch)
-    self:Show()
-    self:SetAlphaFromBoolean(isMatch)
-end
-
 -- updates visibility of index text and updates font
 function ns.IndicatorMixin:UpdateIndexDisplay()
     local db = ns.db[self:GetParent().frameType]

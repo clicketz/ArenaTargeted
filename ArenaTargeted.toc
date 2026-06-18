@@ -1,4 +1,4 @@
-## Interface: 120005
+## Interface: 120007
 ## Title: ArenaTargeted
 ## Notes: Shows class-colored indicators next to party frames when targeted by enemies in Arena.
 ## Author: clicket

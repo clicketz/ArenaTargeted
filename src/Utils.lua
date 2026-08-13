@@ -30,11 +30,14 @@ function ns.GetUnitColor(unit)
 end
 
 function ns.IsMatch(unit1, unit2)
+    local one = UnitName(unit1)
+    local two = UnitName(unit2)
+
+    if issecretvalue(one) or issecretvalue(two) then
+        return false
+    end
+
     if not UnitExists(unit1) or not UnitExists(unit2) then return false end
 
-    local class1 = UnitClassBase(unit1)
-    local class2 = UnitClassBase(unit2)
-    if not class1 or class1 ~= class2 then return false end
-
-    return UnitHonorLevel(unit1) == UnitHonorLevel(unit2)
+    return one == two
 end

@@ -235,17 +235,17 @@ function ns.SetupOptions()
     local mainPanel = CreateFrame("Frame")
     mainPanel.name = addonName
 
-    local mainTitle = mainPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    mainTitle:SetPoint("TOPLEFT", 16, -16)
-    mainTitle:SetText(addonName)
-
-    local version = mainPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    version:SetPoint("TOPLEFT", mainTitle, "BOTTOMLEFT", 0, -8)
-    version:SetText("Version: " .. tostring(C_AddOns.GetAddOnMetadata(addonName, "Version") or "Unknown"))
+    local title = mainPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 16, -16)
+    title:SetText(addonName)
 
     local author = mainPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    author:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -4)
-    author:SetText("Author: " .. tostring(C_AddOns.GetAddOnMetadata(addonName, "Author") or "Unknown"))
+    author:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+    author:SetFormattedText("|cFFFF7C0AAuthor|r: %s", C_AddOns.GetAddOnMetadata(addonName, "Author"))
+
+    local version = mainPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    version:SetPoint("TOPLEFT", author, "BOTTOMLEFT", 0, -8)
+    version:SetFormattedText("|cFFFF7C0AVersion|r: %s", C_AddOns.GetAddOnMetadata(addonName, "Version"))
 
     local helpPanel = CreateFrame("Frame", nil, mainPanel)
     helpPanel:SetSize(200, 100)
@@ -272,14 +272,14 @@ function ns.SetupOptions()
     lastHelp = AddCommand("/at test", "Toggle test mode", lastHelp)
     lastHelp = AddCommand("/at reset", "Reset all settings", lastHelp)
 
-    local testBtn = CreateButton("Test: OFF", mainPanel, author, 140, function()
+    local testBtn = CreateButton("Test: OFF", mainPanel, version, 140, function()
         ns.ToggleTestMode()
     end)
     table.insert(refreshFuncs, function()
         testBtn:SetText("Test: " .. (ns.testMode and "ON" or "OFF"))
     end)
 
-    local resetBtn = CreateButton("Reset to Defaults", mainPanel, author, 140, function()
+    local resetBtn = CreateButton("Reset to Defaults", mainPanel, version, 140, function()
         ns.ResetSettings()
     end)
     resetBtn:ClearAllPoints()
